@@ -126,6 +126,35 @@ def plot_unique_movements(ax, info):
     # set_legend(ax, size=12)
 
 
+def plot_flow_in_env(ax, info):
+    ax.cla()
+    img_np = info['img_np']
+    agents = info['agents']
+    corridor = info['corridor']
+
+    field = img_np * -1
+    for n in corridor:
+        field[n.x, n.y] = 2
+
+    if 'free_nodes' in info:
+        free_nodes = info['free_nodes']
+        for n in free_nodes:
+            field[n.x, n.y] = 3
+    ax.imshow(field, origin='lower')
+
+    others_y_list, others_x_list, others_cm_list = [], [], []
+    for agent in agents:
+        curr_node = agent.curr_node
+        others_y_list.append(curr_node.y)
+        others_x_list.append(curr_node.x)
+        others_cm_list.append(get_color(agent.num))
+    ax.scatter(others_y_list, others_x_list, s=100, c='k')
+    ax.scatter(others_y_list, others_x_list, s=50, c=np.array(others_cm_list))
+    # ax.scatter(others_y_list, others_x_list, s=50, c='yellow')
+
+    ax.set_title(f'title')
+
+
 def plot_step_in_env(ax, info):
     ax.cla()
     # nodes = info['nodes']
