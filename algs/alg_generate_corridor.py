@@ -95,11 +95,10 @@ def main():
     # the run
     obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], corridor_names=[n.xy_name for n in corridor])
     for i_step in range(iterations):
-        # actions = env.sample_actions()
         actions = alg.get_actions(obs)  # alg part
         obs, metrics, terminated, info = env.step(actions)
 
-        # render
+        # update metrics + render
         total_unique_moves_list.append(metrics['total_unique_moves'])
         plot_info = {
             'i': i_step, 'iterations': iterations, 'img_dir': img_dir, 'img_np': env.img_np,
