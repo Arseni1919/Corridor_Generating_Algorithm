@@ -76,10 +76,10 @@ class ALgCC:
         - create flow to find k empty locations
         - roll the agents upon the flow
         """
-        self._create_flow_roadmap()
-        self._roll_agents()
+        agents_in_corridor, free_nodes, free_nodes_dict = self._create_flow_roadmap()
+        self._roll_agents(agents_in_corridor, free_nodes, free_nodes_dict)
 
-    def _create_flow_roadmap(self):
+    def _create_flow_roadmap(self) -> Tuple[List[AlgAgentCC], List[Node], Dict[str, Node]]:
 
         # get agents inside the corridor
         agents_in_corridor = [agent for agent in self.agents if agent.curr_node in self.corridor]
@@ -100,10 +100,7 @@ class ALgCC:
         plt.show()
         plt.close()
 
-        # complete search from all agents to all k locations
-        self._roll_agents(agents_in_corridor, free_nodes, free_nodes_dict)
-
-        plt.close()
+        return agents_in_corridor, free_nodes, free_nodes_dict
 
     def _find_k_free_locations(self, agents_in_corridor: List[AlgAgentCC]) -> Tuple[List[Node], Dict[str, Node]]:
         k: int = len(agents_in_corridor)
@@ -153,14 +150,19 @@ class ALgCC:
         return free_nodes, free_nodes_dict
 
     def _roll_agents(self, agents_in_corridor: List[AlgAgentCC], free_nodes: List[Node], free_nodes_dict: Dict[str, Node]):
+
+        # create tubes
+        tubes_to_corridor = []
         for cc_agent in agents_in_corridor:
             free_node = cc_agent.free_node
             spanning_tree_dict = cc_agent.spanning_tree_dict
             tube_to_corridor = get_tube_to_corridor(free_node, spanning_tree_dict, self.corridor, self.nodes_dict)
+            tubes_to_corridor.append(tube_to_corridor)
 
-            # roll any agent through the tube
-            pass
-            print()
+        # roll any agent through the tube
+        path_time: int = 0
+
+        print()
 
 
 def main():
