@@ -2,6 +2,7 @@ from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
 from algs.alg_a_star_space_time import a_star_xyt
+from environments.env_corridor_creation import SimEnvCC, get_random_corridor
 
 
 class AlgAgentCC:
@@ -43,8 +44,8 @@ class ALgCC:
         self._create_agents()
         self._solve()
 
-    def get_actions(self) -> Dict[str, str]:
-            pass
+    def get_actions(self, obs: dict) -> Dict[str, str]:
+        pass
 
     def _create_agents(self) -> None:
         self.agents: List[AlgAgentCC] = []
@@ -59,6 +60,65 @@ class ALgCC:
         - create flow to find k empty locations
         - roll the agents upon the flow
         """
+        self._create_flow_roadmap()
+        self._roll_agents()
+
+    def _create_flow_roadmap(self):
+        agents_in_corridor = [agent for agent in self.agents if agent.curr_node in self.corridor]
+        print()
+
+    def _roll_agents(self):
         pass
+
+
+def main():
+    set_seed(random_seed_bool=False, seed=123)
+    N = 100
+    iterations = 100
+    # img_dir = 'empty-32-32.map'
+    img_dir = 'random-32-32-20.map'
+
+    # problem creation
+    env = SimEnvCC(img_dir=img_dir)
+    start_nodes = random.sample(env.nodes, N)
+    corridor = get_random_corridor(env)
+
+    # alg creation + init
+    alg = ALgCC(img_dir=img_dir)
+    alg.initiate_problem(start_node_names=[n.xy_name for n in start_nodes], corridor_names=[n.xy_name for n in corridor])
+
+    # for rendering
+    fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+    plot_rate = 0.1
+    total_unique_moves_list = []
+
+    # the run
+    obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], corridor_names=[n.xy_name for n in corridor])
+    for i_step in range(iterations):
+        # actions = env.sample_actions()
+        actions = alg.get_actions(obs)  # alg part
+        obs, metrics, terminated, info = env.step(actions)
+
+        # render
+        total_unique_moves_list.append(metrics['total_unique_moves'])
+        plot_info = {
+            'i': i_step, 'iterations': iterations, 'img_dir': img_dir, 'img_np': env.img_np,
+            'n_agents': env.n_agents, 'agents': env.agents, 'corridor': corridor,
+            'total_unique_moves_list': total_unique_moves_list,
+        }
+        plot_step_in_env(ax[0], plot_info)
+        plot_unique_movements(ax[1], plot_info)
+        plt.pause(plot_rate)
+
+        if terminated:
+            break
+
+    plt.show()
+    print(f'finished run, metrics: {metrics}')
+
+
+if __name__ == '__main__':
+    main()
+
 
 

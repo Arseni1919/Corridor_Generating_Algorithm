@@ -45,7 +45,7 @@ class SimEnvCC:
     def n_agents(self):
         return len(self.agents)
 
-    def reset(self, start_node_names: List[str], corridor_names: List[str]) -> None:
+    def reset(self, start_node_names: List[str], corridor_names: List[str]) -> dict:
         self.start_nodes = [self.nodes_dict[snn] for snn in start_node_names]
         self.corridor = [self.nodes_dict[cn] for cn in corridor_names]
         self._check_solvability()
@@ -53,6 +53,8 @@ class SimEnvCC:
         self.terminated = False
         self.n_runs += 1
         self.iteration = 0
+        obs = self._get_obs()
+        return obs
 
     def sample_actions(self) -> Dict[str, str]:
         actions = {}
@@ -158,7 +160,7 @@ def main():
     total_unique_moves_list = []
 
     # the run
-    env.reset(start_node_names=[n.xy_name for n in start_nodes], corridor_names=[n.xy_name for n in corridor])
+    obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], corridor_names=[n.xy_name for n in corridor])
     for i_step in range(iterations):
         actions = env.sample_actions()  # alg part
         obs, metrics, terminated, info = env.step(actions)
