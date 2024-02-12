@@ -238,7 +238,6 @@ class ALgCC:
 
         # create tubes
         tubes_to_corridor = get_tubes_to_corridor(agents_in_corridor, self.corridor, self.nodes_dict)
-        still_in_corridor: List[AlgAgentCC] = agents_in_corridor[:]
 
         # fig, ax = plt.subplots(1, 2, figsize=(14, 7))
         # plot_info = {'img_np': self.img_np, 'agents': self.agents, 'corridor': self.corridor,
@@ -317,11 +316,11 @@ class ALgCC:
 
 
 def main():
-    # set_seed(random_seed_bool=False, seed=973)
-    set_seed(random_seed_bool=True)
+    set_seed(random_seed_bool=False, seed=615)
+    # set_seed(random_seed_bool=True)
     # N = 80
-    N = 100
-    # N = 600
+    # N = 100
+    N = 550
     # N = 700
     # N = 750
     iterations = 100
