@@ -153,14 +153,12 @@ class ALgCCv2(ALgCC):
         for agent in self.agents:
             while len(agent.path) < max_len:
                 agent.path.append(agent.path[-1])
-        len_list: List[int] = [len(agent.path) for agent in self.agents]
-        assert len(set(len_list)) == 1
 
         prev_config: List[Tuple[int, int]] = [a.path[0].xy for a in self.agents]
         finished = False
         curr_index = 1
         while not finished:
-            if len(self.agents[0].path) < 4:
+            if len(self.agents[0].path) < 4 or curr_index > len(self.agents[0].path) - 3:
                 break
             next_config = [a.path[curr_index].xy for a in self.agents]
             if same_configs(prev_config, next_config):
@@ -173,6 +171,9 @@ class ALgCCv2(ALgCC):
             if curr_index >= len(self.agents[0].path) - 1:
                 finished = True
 
+        len_list: List[int] = [len(agent.path) for agent in self.agents]
+        assert len(set(len_list)) == 1
+
 
         # for agent1, agent2 in combinations(self.agents, 2):
         #     print(f'{agent1.name}-{agent2.name}')
@@ -181,7 +182,7 @@ class ALgCCv2(ALgCC):
 
 @use_profiler(save_dir='../stats/alg_gen_cor_v2.pstat')
 def main():
-    set_seed(random_seed_bool=False, seed=552)
+    set_seed(random_seed_bool=False, seed=218)
     # set_seed(random_seed_bool=True)
     # N = 80
     # N = 100
@@ -190,17 +191,17 @@ def main():
     # N = 500
     # N = 600
     # N = 620
-    # N = 700
+    N = 700
     # N = 750
     # N = 850
-    N = 2000
+    # N = 2000
     # img_dir = 'empty-32-32.map'
-    # img_dir = 'random-32-32-20.map'
+    img_dir = 'random-32-32-20.map'
     # img_dir = 'maze-32-32-2.map'
-    img_dir = 'random-64-64-20.map'
+    # img_dir = 'random-64-64-20.map'
 
-    # to_render = True
-    to_render = False
+    to_render = True
+    # to_render = False
 
 
     # problem creation
