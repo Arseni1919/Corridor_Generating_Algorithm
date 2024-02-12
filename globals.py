@@ -6,7 +6,7 @@ import copy
 from functools import lru_cache
 from collections import OrderedDict
 import itertools
-from itertools import combinations, permutations
+from itertools import combinations, permutations, tee
 from collections import defaultdict, Counter
 from datetime import datetime
 import time

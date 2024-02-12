@@ -2,6 +2,15 @@ from globals import *
 from concurrent.futures import ThreadPoolExecutor
 
 
+def pairwise_list(input_list: list) -> list[tuple]:
+    def pairwise(iterable):
+        a, b = tee(iterable)
+        next(b, None)
+        return zip(a, b)
+    result = list(map(lambda x: (x[0], x[1]), pairwise(input_list)))
+    return result
+
+
 def get_color(i):
     index_to_pick = i % len(color_names)
     return color_names[index_to_pick]

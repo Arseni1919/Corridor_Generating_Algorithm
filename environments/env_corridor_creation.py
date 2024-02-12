@@ -52,7 +52,7 @@ class SimEnvCC:
         self._create_agents()
         self.terminated = False
         self.n_runs += 1
-        self.iteration = 0
+        self.iteration = 1
         obs = self._get_obs()
         return obs
 
@@ -80,6 +80,7 @@ class SimEnvCC:
     def step(self, actions: Dict[str, str]) -> Tuple[dict, dict, bool, dict]:
         assert not self.terminated
         self._execute_actions(actions)
+        self.iteration += 1
         obs = self._get_obs()
         metrics = self._get_metrics()
         self.terminated = self._check_termination()
@@ -113,7 +114,9 @@ class SimEnvCC:
         check_if_ec(self.agents)
 
     def _get_obs(self) -> dict:
-        return {agent.name: agent.curr_node.xy_name for agent in self.agents}
+        obs = {agent.name: agent.curr_node.xy_name for agent in self.agents}
+        obs['iteration'] = self.iteration
+        return obs
 
     def _get_metrics(self) -> dict:
         total_unique_moves = sum([len(agent.unique_moves) for agent in self.agents])

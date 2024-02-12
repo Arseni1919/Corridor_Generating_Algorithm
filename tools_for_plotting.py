@@ -140,11 +140,22 @@ def plot_flow_in_env(ax, info):
         free_nodes = info['free_nodes']
         for n in free_nodes:
             field[n.x, n.y] = 3
+
+    # if 'tubes_to_corridor' in info:
+    #     tubes_to_corridor = info['tubes_to_corridor']
+    #     for tube in tubes_to_corridor:
+    #         for n in tube:
+    #             field[n.x, n.y] = 5
+
+    if 'tube' in info:
+        tube = info['tube']
+        for n in tube:
+            field[n.x, n.y] = 4
     ax.imshow(field, origin='lower')
 
     others_y_list, others_x_list, others_cm_list = [], [], []
     for agent in agents:
-        curr_node = agent.curr_node
+        curr_node = agent.path[-1]
         others_y_list.append(curr_node.y)
         others_x_list.append(curr_node.x)
         others_cm_list.append(get_color(agent.num))
