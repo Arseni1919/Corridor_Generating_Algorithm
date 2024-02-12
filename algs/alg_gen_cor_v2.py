@@ -8,38 +8,6 @@ from environments.env_corridor_creation import SimEnvCC, get_random_corridor
 from alg_gen_cor_v1 import *
 
 
-def get_assign_agent_to_node_dict(tube: List[Node], t_agents: List[AlgAgentCC], corridor: List[Node]) -> Dict[str, Node]:
-    copy_t_agents = t_agents[:]
-    assign_agent_to_node_dict: Dict[str, Node] = {}
-    for n in tube:
-        if n in corridor:
-            continue
-        next_agent = copy_t_agents.pop(0)
-        assign_agent_to_node_dict[next_agent.name] = n
-    assert len(copy_t_agents) == 0
-    return assign_agent_to_node_dict
-
-
-def get_full_tube(free_node: Node, spanning_tree_dict: Dict[str, str], nodes_dict: Dict[str, Node]) -> List[Node]:
-    tube: List[Node] = [free_node]
-    parent = spanning_tree_dict[free_node.xy_name]
-    while parent is not None:
-        parent_node = nodes_dict[parent]
-        tube.append(parent_node)
-        parent = spanning_tree_dict[parent]
-    return tube
-
-
-def tube_is_free_to_go(tube: List[Node], inner_captured_nodes: list, next_agent: AlgAgentCC) -> bool:
-    # tube: free node -> init node
-    sub_tube = tube[:-1]
-    assert next_agent.path[-1] not in sub_tube
-    for n in sub_tube:
-        if n in inner_captured_nodes:
-            return False
-    return True
-
-
 class ALgCCv2(ALgCC):
     def __init__(self, img_dir: str, env: SimEnvCC, **kwargs):
         super().__init__(img_dir, env, **kwargs)
@@ -206,12 +174,12 @@ class ALgCCv2(ALgCC):
                 finished = True
 
 
-
         # for agent1, agent2 in combinations(self.agents, 2):
         #     print(f'{agent1.name}-{agent2.name}')
         #     assert two_plans_have_no_confs(agent1.path, agent2.path)
 
 
+@use_profiler(save_dir='../stats/alg_gen_cor_v2.pstat')
 def main():
     set_seed(random_seed_bool=False, seed=552)
     # set_seed(random_seed_bool=True)
@@ -221,13 +189,19 @@ def main():
     # N = 400
     # N = 500
     # N = 600
-    N = 620
+    # N = 620
     # N = 700
     # N = 750
     # N = 850
+    N = 2000
     # img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-20.map'
-    img_dir = 'maze-32-32-2.map'
+    # img_dir = 'maze-32-32-2.map'
+    img_dir = 'random-64-64-20.map'
+
+    # to_render = True
+    to_render = False
+
 
     # problem creation
     env = SimEnvCC(img_dir=img_dir)
@@ -239,9 +213,10 @@ def main():
     alg.initiate_problem(start_node_names=[n.xy_name for n in start_nodes], corridor_names=[n.xy_name for n in corridor])
 
     # for rendering
-    fig, ax = plt.subplots(1, 2, figsize=(14, 7))
-    plot_rate = 0.1
-    total_unique_moves_list = []
+    if to_render:
+        fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+        plot_rate = 0.1
+        total_unique_moves_list = []
 
     # the run
     i_step = 0
@@ -252,7 +227,21 @@ def main():
         obs, metrics, terminated, info = env.step(actions)
 
         # update metrics + render
-        total_unique_moves_list.append(metrics['total_unique_moves'])
+        if to_render:
+            total_unique_moves_list.append(metrics['total_unique_moves'])
+            plot_info = {
+                'i': i_step, 'img_dir': img_dir, 'img_np': env.img_np,
+                'n_agents': env.n_agents, 'agents': env.agents, 'corridor': corridor,
+                'total_unique_moves_list': total_unique_moves_list,
+            }
+            plot_step_in_env(ax[0], plot_info)
+            plot_unique_movements(ax[1], plot_info)
+            plt.pause(plot_rate)
+
+        if terminated:
+            break
+
+    if to_render:
         plot_info = {
             'i': i_step, 'img_dir': img_dir, 'img_np': env.img_np,
             'n_agents': env.n_agents, 'agents': env.agents, 'corridor': corridor,
@@ -261,19 +250,7 @@ def main():
         plot_step_in_env(ax[0], plot_info)
         plot_unique_movements(ax[1], plot_info)
         plt.pause(plot_rate)
-
-        if terminated:
-            break
-
-    plot_info = {
-        'i': i_step, 'img_dir': img_dir, 'img_np': env.img_np,
-        'n_agents': env.n_agents, 'agents': env.agents, 'corridor': corridor,
-        'total_unique_moves_list': total_unique_moves_list,
-    }
-    plot_step_in_env(ax[0], plot_info)
-    plot_unique_movements(ax[1], plot_info)
-    plt.pause(plot_rate)
-    plt.show()
+        plt.show()
     print(f'finished run, metrics: {metrics}')
 
 

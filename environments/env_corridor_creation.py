@@ -85,6 +85,9 @@ class SimEnvCC:
         metrics = self._get_metrics()
         self.terminated = self._check_termination()
         info = {}
+        print(f'[ENV]: iteration: {self.iteration}')
+        if self.terminated:
+            print(f'[ENV]: finished.')
         return obs, metrics, self.terminated, info
 
     def _check_solvability(self):
@@ -184,7 +187,6 @@ def main():
 
     plt.show()
     print(f'finished run, metrics: {metrics}')
-
 
 
 if __name__ == '__main__':

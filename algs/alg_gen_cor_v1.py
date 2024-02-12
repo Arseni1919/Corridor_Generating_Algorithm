@@ -7,6 +7,38 @@ from algs.alg_a_star_space_time import a_star_xyt
 from environments.env_corridor_creation import SimEnvCC, get_random_corridor
 
 
+def get_assign_agent_to_node_dict(tube: List[Node], t_agents: list, corridor: List[Node]) -> Dict[str, Node]:
+    copy_t_agents = t_agents[:]
+    assign_agent_to_node_dict: Dict[str, Node] = {}
+    for n in tube:
+        if n in corridor:
+            continue
+        next_agent = copy_t_agents.pop(0)
+        assign_agent_to_node_dict[next_agent.name] = n
+    assert len(copy_t_agents) == 0
+    return assign_agent_to_node_dict
+
+
+def get_full_tube(free_node: Node, spanning_tree_dict: Dict[str, str], nodes_dict: Dict[str, Node]) -> List[Node]:
+    tube: List[Node] = [free_node]
+    parent = spanning_tree_dict[free_node.xy_name]
+    while parent is not None:
+        parent_node = nodes_dict[parent]
+        tube.append(parent_node)
+        parent = spanning_tree_dict[parent]
+    return tube
+
+
+def tube_is_free_to_go(tube: List[Node], inner_captured_nodes: list, next_agent: Any) -> bool:
+    # tube: free node -> init node
+    sub_tube = tube[:-1]
+    assert next_agent.path[-1] not in sub_tube
+    for n in sub_tube:
+        if n in inner_captured_nodes:
+            return False
+    return True
+
+
 def get_agents_in_corridor(agents: list, corridor: list) -> deque:
     # get agents inside the corridor
     init_agents_in_corridor = [agent for agent in agents if agent.path[-1] in corridor]
@@ -331,6 +363,7 @@ class ALgCC:
         print()
 
 
+@use_profiler(save_dir='../stats/alg_gen_cor_v3.pstat')
 def main():
     set_seed(random_seed_bool=False, seed=615)
     # set_seed(random_seed_bool=True)
