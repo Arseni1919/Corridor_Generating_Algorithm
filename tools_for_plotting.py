@@ -116,9 +116,8 @@ def set_legend(ax, framealpha=None, size=9):
 def plot_unique_movements(ax, info):
     ax.cla()
     total_unique_moves_list = info['total_unique_moves_list']
-    iterations = info["iterations"]
     ax.plot(total_unique_moves_list)
-    ax.set_xlim([0, iterations])
+    # ax.set_xlim([0, iterations])
     ax.set_xlabel('iters')
     ax.set_ylabel('unique moves')
     # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
@@ -171,7 +170,6 @@ def plot_step_in_env(ax, info):
     # nodes = info['nodes']
     # a_name = info['i_agent'].name if 'i_agent' in info else 'agent_0'
     curr_iteration = info["i"]
-    iterations = info["iterations"]
     n_agents = info['n_agents']
     img_dir = info['img_dir']
     img_np = info['img_np']
@@ -193,8 +191,8 @@ def plot_step_in_env(ax, info):
 
     ax.imshow(field, origin='lower')
     ax.set_title(f'Map: {img_dir[:-4]}\n '
-                 f'{n_agents} agents'  # , selected: {one_master.name} - {one_master.order}\n
-                 f'(iteration: {curr_iteration + 1}/{iterations})')
+                 f'{n_agents} agents '  # , selected: {one_master.name} - {one_master.order}\n
+                 f'(iteration: {curr_iteration + 1})')
 
 
 def plot_env_field(ax, info):

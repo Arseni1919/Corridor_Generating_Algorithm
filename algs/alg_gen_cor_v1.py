@@ -7,6 +7,18 @@ from algs.alg_a_star_space_time import a_star_xyt
 from environments.env_corridor_creation import SimEnvCC, get_random_corridor
 
 
+def get_agents_in_corridor(agents: list, corridor: list) -> deque:
+    # get agents inside the corridor
+    init_agents_in_corridor = [agent for agent in agents if agent.curr_node in corridor]
+    nodes_to_agents_dict = {agent.curr_node.xy_name: agent for agent in init_agents_in_corridor}
+    agents_in_corridor: Deque[AlgAgentCC] = deque()
+    for n in corridor:
+        if n.xy_name in nodes_to_agents_dict:
+            agents_in_corridor.append(nodes_to_agents_dict[n.xy_name])
+    assert len(agents_in_corridor) == len(init_agents_in_corridor)
+    return agents_in_corridor
+
+
 def tube_is_full(tube: List[Node], prev_config: OrderedDict) -> bool:
     for n in tube[:-1]:
         if n.xy_name not in prev_config:
@@ -155,13 +167,8 @@ class ALgCC:
     def _create_flow_roadmap(self) -> Tuple[List[AlgAgentCC], List[Node], Dict[str, Node]]:
 
         # get agents inside the corridor
-        init_agents_in_corridor = [agent for agent in self.agents if agent.curr_node in self.corridor]
-        nodes_to_agents_dict = {agent.curr_node.xy_name: agent for agent in init_agents_in_corridor}
-        agents_in_corridor = []
-        for n in self.corridor:
-            if n.xy_name in nodes_to_agents_dict:
-                agents_in_corridor.append(nodes_to_agents_dict[n.xy_name])
-        assert len(agents_in_corridor) == len(init_agents_in_corridor)
+        agents_in_corridor = get_agents_in_corridor(self.agents, self.corridor)
+
         # fig, ax = plt.subplots(1, 2, figsize=(14, 7))
         # plot_info = {'img_np': self.img_np, 'agents': self.agents, 'corridor': self.corridor}
         # plot_flow_in_env(ax[0], plot_info)
@@ -240,14 +247,11 @@ class ALgCC:
         # plt.show()
         # plt.close()
 
-
         static_agents = get_static_agents(tubes_to_corridor, self.corridor, self.agents)
         moving_agents: List[AlgAgentCC] = [agent for agent in self.agents if agent not in static_agents]
 
         # roll any agent through the tube
         path_time: int = 0
-        conf_v_list: List[Tuple[int, int]] = []
-        conf_e_list: List[Tuple[int, int, int, int]] = []
 
         corridor_is_empty: bool = False
         prev_config: OrderedDict[str, AlgAgentCC] = OrderedDict([(agent.curr_node.xy_name, agent) for agent in self.agents])
@@ -272,21 +276,15 @@ class ALgCC:
                     curr_agent: AlgAgentCC = prev_config[from_t_node.xy_name]
                     if to_t_node.xy_name in next_config:
                         next_config[from_t_node.xy_name] = curr_agent
-                        conf_v_list.append(from_t_node.xy)
                     else:
                         next_config[to_t_node.xy_name] = curr_agent
-                        conf_v_list.append(to_t_node.xy)
-                        conf_e_list.append((to_t_node.x, to_t_node.y, from_t_node.x, from_t_node.y))
                 else:
                     if from_t_node in self.corridor:
                         curr_agent, sub_to_node = find_closest_hanging_agent(from_t_node, self.corridor, prev_config, next_config, self.nodes_dict)
                         if sub_to_node.xy_name in next_config:
                             next_config[from_t_node.xy_name] = curr_agent
-                            conf_v_list.append(from_t_node.xy)
                         else:
                             next_config[sub_to_node.xy_name] = curr_agent
-                            conf_v_list.append(sub_to_node.xy)
-                            conf_e_list.append((sub_to_node.x, sub_to_node.y, from_t_node.x, from_t_node.y))
             next_config_agents = list(next_config.values())
             for m_agent in moving_agents:
                 # if not moving_agents_dict[m_agent.name]:
@@ -300,17 +298,15 @@ class ALgCC:
                 next_node = self.nodes_dict[next_node_name]
                 agent.path.append(next_node)
 
-            fig, ax = plt.subplots(1, 2, figsize=(14, 7))
-            plot_info = {'img_np': self.img_np, 'agents': self.agents, 'corridor': self.corridor,
-                         'free_nodes': free_nodes, 'tubes_to_corridor': tubes_to_corridor, 'tube': tube}
-            plot_flow_in_env(ax[0], plot_info)
-            plt.show()
-            plt.close()
+            # fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+            # plot_info = {'img_np': self.img_np, 'agents': self.agents, 'corridor': self.corridor,
+            #              'free_nodes': free_nodes, 'tubes_to_corridor': tubes_to_corridor, 'tube': tube}
+            # plot_flow_in_env(ax[0], plot_info)
+            # plt.show()
+            # plt.close()
 
             prev_config = next_config
             next_config: OrderedDict[str, AlgAgentCC] = OrderedDict([(agent.curr_node.xy_name, agent) for agent in static_agents])
-            conf_v_list: List[Tuple[int, int]] = []
-            conf_e_list: List[Tuple[int, int, int, int]] = []
 
             still_in_corridor = [agent for agent in agents_in_corridor if agent.path[-1] in self.corridor]
             corridor_is_empty = len(still_in_corridor) == 0
@@ -321,14 +317,17 @@ class ALgCC:
 
 
 def main():
-    set_seed(random_seed_bool=False, seed=123)
+    # set_seed(random_seed_bool=False, seed=973)
+    set_seed(random_seed_bool=True)
     # N = 80
-    # N = 100
+    N = 100
+    # N = 600
     # N = 700
-    N = 750
+    # N = 750
     iterations = 100
     # img_dir = 'empty-32-32.map'
-    img_dir = 'random-32-32-20.map'
+    # img_dir = 'random-32-32-20.map'
+    img_dir = 'maze-32-32-2.map'
 
     # problem creation
     env = SimEnvCC(img_dir=img_dir)
@@ -345,8 +344,10 @@ def main():
     total_unique_moves_list = []
 
     # the run
+    i_step = 0
     obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], corridor_names=[n.xy_name for n in corridor])
-    for i_step in range(iterations):
+    while True:
+        i_step += 1
         actions = alg.get_actions(obs)  # alg part
         obs, metrics, terminated, info = env.step(actions)
 
@@ -364,6 +365,14 @@ def main():
         if terminated:
             break
 
+    plot_info = {
+        'i': iterations, 'iterations': iterations, 'img_dir': img_dir, 'img_np': env.img_np,
+        'n_agents': env.n_agents, 'agents': env.agents, 'corridor': corridor,
+        'total_unique_moves_list': total_unique_moves_list,
+    }
+    plot_step_in_env(ax[0], plot_info)
+    plot_unique_movements(ax[1], plot_info)
+    plt.pause(plot_rate)
     plt.show()
     print(f'finished run, metrics: {metrics}')
 
