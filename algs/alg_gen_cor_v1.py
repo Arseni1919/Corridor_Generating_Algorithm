@@ -9,8 +9,8 @@ from environments.env_corridor_creation import SimEnvCC, get_random_corridor
 
 def get_agents_in_corridor(agents: list, corridor: list) -> deque:
     # get agents inside the corridor
-    init_agents_in_corridor = [agent for agent in agents if agent.curr_node in corridor]
-    nodes_to_agents_dict = {agent.curr_node.xy_name: agent for agent in init_agents_in_corridor}
+    init_agents_in_corridor = [agent for agent in agents if agent.path[-1] in corridor]
+    nodes_to_agents_dict = {agent.path[-1].xy_name: agent for agent in init_agents_in_corridor}
     agents_in_corridor: Deque[AlgAgentCC] = deque()
     for n in corridor:
         if n.xy_name in nodes_to_agents_dict:
@@ -104,6 +104,10 @@ class AlgAgentCC:
         self.path: List[Node] = [start_node]
         self.free_node: Node | None = None
         self.spanning_tree_dict: Dict[str, str | None] | None = None
+        self.t_agents: list = []
+        self.tube: List[Node] = []
+        self.start_time: int = 0
+        self.finish_time: int = 0
 
     @property
     def name(self):
@@ -112,6 +116,18 @@ class AlgAgentCC:
     @property
     def path_names(self):
         return [n.xy_name for n in self.path]
+
+    @property
+    def last_path_node_name(self):
+        return self.path[-1].xy_name
+
+    @property
+    def t_agents_names(self):
+        return [a.name for a in self.t_agents]
+
+    @property
+    def tube_names(self):
+        return [n.xy_name for n in self.tube]
 
     def __eq__(self, other):
         return self.num == other.num

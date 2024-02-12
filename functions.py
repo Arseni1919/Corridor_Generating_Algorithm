@@ -2,7 +2,18 @@ from globals import *
 from concurrent.futures import ThreadPoolExecutor
 
 
-def pairwise_list(input_list: list) -> list[tuple]:
+def same_configs(config1: List[Tuple[int, int]], config2: List[Tuple[int, int]]) -> bool:
+    for item1, item2 in zip(config1, config2):
+        if item1 != item2:
+            return False
+    return True
+
+
+def intersection(lst1, lst2):
+    return list(set(lst1) & set(lst2))
+
+
+def pairwise_list[T](input_list: list) -> list[tuple[T, T]]:
     def pairwise(iterable):
         a, b = tee(iterable)
         next(b, None)

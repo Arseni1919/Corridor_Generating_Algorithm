@@ -158,9 +158,16 @@ def plot_flow_in_env(ax, info):
         others_y_list.append(curr_node.y)
         others_x_list.append(curr_node.x)
         others_cm_list.append(get_color(agent.num))
+
     ax.scatter(others_y_list, others_x_list, s=100, c='k')
     ax.scatter(others_y_list, others_x_list, s=50, c=np.array(others_cm_list))
     # ax.scatter(others_y_list, others_x_list, s=50, c='yellow')
+
+    if 'next_agent' in info:
+        next_agent = info['next_agent']
+        curr_node = next_agent.curr_node
+        ax.scatter([curr_node.y], [curr_node.x], s=200, c='w')
+        ax.scatter([curr_node.y], [curr_node.x], s=30, c='r')
 
     ax.set_title(f'title')
 
