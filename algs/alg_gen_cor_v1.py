@@ -7,6 +7,16 @@ from algs.alg_a_star_space_time import a_star_xyt
 from environments.env_corridor_creation import SimEnvCC, get_random_corridor
 
 
+def copy_nodes(nodes: List[Node]) -> Tuple[List[Node], Dict[str, Node]]:
+    new_nodes: List[Node] = []
+    new_nodes_dict: Dict[str, Node] = {}
+    for node in nodes:
+        new_node = Node(node.x, node.y, neighbours=node.neighbours)
+        new_nodes.append(new_node)
+        new_nodes_dict[new_node.xy_name] = new_node
+    return new_nodes, new_nodes_dict
+
+
 def get_assign_agent_to_node_dict(tube: List[Node], t_agents: list, corridor: List[Node]) -> Dict[str, Node]:
     copy_t_agents = t_agents[:]
     assign_agent_to_node_dict: Dict[str, Node] = {}
@@ -169,13 +179,13 @@ class ALgCC:
     def __init__(self, img_dir: str, env: SimEnvCC, **kwargs):
         self.img_dir = img_dir
         self.env = env
-        path_to_maps: str = kwargs['path_to_maps'] if 'path_to_maps' in kwargs else '../maps'
-        path_to_heuristics: str = kwargs[
-            'path_to_heuristics'] if 'path_to_heuristics' in kwargs else '../logs_for_heuristics'
+        # path_to_maps: str = kwargs['path_to_maps'] if 'path_to_maps' in kwargs else '../maps'
+        # path_to_heuristics: str = kwargs['path_to_heuristics'] if 'path_to_heuristics' in kwargs else '../logs_for_heuristics'
 
         # for the map
-        self.map_dim = get_dims_from_pic(img_dir=self.img_dir, path=path_to_maps)
-        self.nodes, self.nodes_dict, self.img_np = build_graph_nodes(img_dir=img_dir, path=path_to_maps, show_map=False)
+        self.nodes, self.nodes_dict = copy_nodes(self.env.nodes)
+        self.img_np = self.env.img_np
+        self.map_dim = self.env.map_dim
         self.h_func = self.env.h_func
 
         self.agents: List[AlgAgentCC] = []
