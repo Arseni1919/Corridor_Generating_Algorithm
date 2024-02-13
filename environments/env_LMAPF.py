@@ -13,8 +13,10 @@ class SimAgentLMAPF:
         self.start_node: Node = start_node
         self.prev_node: Node = start_node
         self.curr_node: Node = start_node
+        self.next_goal_node: Node | None = None
         self.path: List[Node] = []
         self.unique_moves: List[Node] = []
+        self.finished_goals: List[Node] = []
 
     @property
     def name(self):
@@ -25,32 +27,48 @@ class SimEnvLMAPF:
     def __init__(self, img_dir: str, **kwargs):
         self.img_dir = img_dir
         path_to_maps: str = kwargs['path_to_maps'] if 'path_to_maps' in kwargs else '../maps'
-        path_to_heuristics: str = kwargs['path_to_heuristics'] if 'path_to_heuristics' in kwargs else '../logs_for_heuristics'
+        path_to_heuristics: str = kwargs[
+            'path_to_heuristics'] if 'path_to_heuristics' in kwargs else '../logs_for_heuristics'
 
         # for the map
         self.map_dim = get_dims_from_pic(img_dir=self.img_dir, path=path_to_maps)
         self.nodes, self.nodes_dict, self.img_np = build_graph_nodes(img_dir=img_dir, path=path_to_maps, show_map=False)
-        self.h_dict = parallel_build_heuristic_for_entire_map(self.nodes, self.nodes_dict, self.map_dim, img_dir=img_dir, path=path_to_heuristics)
+        self.h_dict = parallel_build_heuristic_for_entire_map(self.nodes, self.nodes_dict, self.map_dim,
+                                                              img_dir=img_dir, path=path_to_heuristics)
         self.h_func = h_func_creator(self.h_dict)
 
-        self.terminated: bool = False
         self.n_runs: int = 0
         self.iteration: int = 0
         self.agents: List[SimAgentLMAPF] = []
         self.agents_dict: Dict[str, SimAgentLMAPF] = {}
         self.start_nodes: List[Node] = []
-        self.corridor: List[Node] = []
+        self.max_time: int | None = None
+        self.corridor_size: int = 1
 
     @property
     def n_agents(self):
         return len(self.agents)
 
-    def reset(self, start_node_names: List[str], corridor_names: List[str]) -> dict:
+    @property
+    def _if_terminated(self) -> bool:
+        return self.iteration > self.max_time
+
+    @property
+    def start_nodes_names(self):
+        return [n.xy_name for n in self.start_nodes]
+
+    @property
+    def agents_names(self):
+        return [a.name for a in self.agents]
+
+    def reset(self, start_node_names: List[str], max_time: int, corridor_size: int) -> Dict[str, Any]:
         self.start_nodes = [self.nodes_dict[snn] for snn in start_node_names]
-        self.corridor = [self.nodes_dict[cn] for cn in corridor_names]
+        self.max_time = max_time
+        self.corridor_size = corridor_size
         self._check_solvability()
         self._create_agents()
-        self.terminated = False
+        # set first goals
+        self._update_goals()
         self.n_runs += 1
         self.iteration = 1
         obs = self._get_obs()
@@ -77,21 +95,42 @@ class SimEnvLMAPF:
 
         return actions
 
-    def step(self, actions: Dict[str, str]) -> Tuple[dict, dict, bool, dict]:
-        assert not self.terminated
+    def step(self, actions: Dict[str, str]) -> Tuple[Dict[str, Any], dict, bool, dict]:
+        assert not self._if_terminated
         self._execute_actions(actions)
+        self._update_goals()
         self.iteration += 1
         obs = self._get_obs()
         metrics = self._get_metrics()
-        self.terminated = self._check_termination()
         info = {}
         print(f'[ENV]: iteration: {self.iteration}')
-        if self.terminated:
+        if self._if_terminated:
             print(f'[ENV]: finished.')
-        return obs, metrics, self.terminated, info
+        return obs, metrics, self._if_terminated, info
+
+    def assign_next_goal(self, curr_agent: SimAgentLMAPF) -> None:
+        occupied_nodes_odict: OrderedDict[str, Node] = OrderedDict()
+        for o_agent in self.agents:
+            if o_agent == curr_agent:
+                continue
+            if o_agent.next_goal_node:
+                occupied_nodes_odict[o_agent.next_goal_node.xy_name] = o_agent.next_goal_node
+
+        possible_nodes: List[Node] = [n for n in self.nodes if n.xy_name not in occupied_nodes_odict]
+        next_goal_node: Node = random.choice(possible_nodes)
+        curr_agent.next_goal_node = next_goal_node
+
+    def _update_goals(self):
+        for agent in self.agents:
+            if agent.next_goal_node is None:
+                self.assign_next_goal(agent)
+                continue
+            if agent.curr_node == agent.next_goal_node:
+                agent.finished_goals.append(agent.next_goal_node)
+                self.assign_next_goal(agent)
 
     def _check_solvability(self):
-        assert len(self.nodes) - len(self.start_nodes) >= len(self.corridor)
+        assert len(self.nodes) - len(self.start_nodes) >= self.corridor_size
 
     def _create_agents(self) -> None:
         self.agents: List[SimAgentLMAPF] = []
@@ -116,21 +155,28 @@ class SimEnvLMAPF:
         check_if_vc(self.agents)
         check_if_ec(self.agents)
 
-    def _get_obs(self) -> dict:
-        obs = {agent.name: agent.curr_node.xy_name for agent in self.agents}
+    def _get_obs(self) -> Dict[str, Any]:
+        obs = {agent.name:
+                   AgentTuple(**{
+                       'num': agent.num,
+                       'start_node_name': agent.start_node.xy_name,
+                       'curr_node_name': agent.curr_node.xy_name,
+                       'next_goal_node_name': agent.next_goal_node.xy_name,
+                   })
+               for agent in self.agents
+               }
         obs['iteration'] = self.iteration
+        obs['start_nodes_names'] = self.start_nodes_names
+        obs['agents_names'] = self.agents_names
         return obs
 
     def _get_metrics(self) -> dict:
-        total_unique_moves = sum([len(agent.unique_moves) for agent in self.agents])
-        return {'total_unique_moves': total_unique_moves}
-
-    def _check_termination(self) -> bool:
-        # return False
+        total_unique_moves: int = 0
+        total_finished_goals: int = 0
         for agent in self.agents:
-            if agent.curr_node in self.corridor:
-                return False
-        return True
+            total_unique_moves += len(agent.unique_moves)
+            total_finished_goals += len(agent.finished_goals)
+        return {'total_unique_moves': total_unique_moves, 'total_finished_goals': total_finished_goals}
 
 
 def get_random_corridor(env: SimEnvLMAPF) -> List[Node]:
@@ -149,14 +195,14 @@ def get_random_corridor(env: SimEnvLMAPF) -> List[Node]:
 
 def main():
     N = 100
-    iterations = 100
     # img_dir = 'empty-32-32.map'
     img_dir = 'random-32-32-20.map'
+    max_time = 100
+    corridor_size = 5
 
     # problem creation
     env = SimEnvLMAPF(img_dir=img_dir)
     start_nodes = random.sample(env.nodes, N)
-    corridor = get_random_corridor(env)
 
     # alg creation + init
 
@@ -164,22 +210,26 @@ def main():
     fig, ax = plt.subplots(1, 2, figsize=(14, 7))
     plot_rate = 0.1
     total_unique_moves_list = []
+    total_finished_goals_list = []
 
     # the run
-    obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], corridor_names=[n.xy_name for n in corridor])
-    for i_step in range(iterations):
+    obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], max_time=max_time, corridor_size=corridor_size)
+    for i_step in range(max_time):
         actions = env.sample_actions()  # alg part
         obs, metrics, terminated, info = env.step(actions)
 
         # render
         total_unique_moves_list.append(metrics['total_unique_moves'])
+        total_finished_goals_list.append(metrics['total_finished_goals'])
         plot_info = {
-            'i': i_step, 'iterations': iterations, 'img_dir': img_dir, 'img_np': env.img_np,
-            'n_agents': env.n_agents, 'agents': env.agents, 'corridor': corridor,
+            'i': i_step, 'iterations': max_time, 'img_dir': img_dir, 'img_np': env.img_np,
+            'n_agents': env.n_agents, 'agents': env.agents,
             'total_unique_moves_list': total_unique_moves_list,
+            'total_finished_goals_list': total_finished_goals_list,
         }
         plot_step_in_env(ax[0], plot_info)
-        plot_unique_movements(ax[1], plot_info)
+        plot_total_finished_goals(ax[1], plot_info)
+        # plot_unique_movements(ax[1], plot_info)
         plt.pause(plot_rate)
 
         if terminated:

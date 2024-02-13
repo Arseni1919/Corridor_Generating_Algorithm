@@ -182,25 +182,26 @@ class ALgCCv2(ALgCC):
 
 @use_profiler(save_dir='../stats/alg_gen_cor_v2.pstat')
 def main():
-    set_seed(random_seed_bool=False, seed=218)
-    # set_seed(random_seed_bool=True)
-    # N = 80
+    # set_seed(random_seed_bool=False, seed=218)
+    set_seed(random_seed_bool=True)
+    N = 70
     # N = 100
     # N = 300
     # N = 400
     # N = 500
     # N = 600
     # N = 620
-    N = 700
+    # N = 700
     # N = 750
     # N = 850
     # N = 2000
+    img_dir = '10_10_my_rand.map'
     # img_dir = 'empty-32-32.map'
-    img_dir = 'random-32-32-20.map'
+    # img_dir = 'random-32-32-20.map'
     # img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
 
-    to_render = True
+    to_render: bool = True
     # to_render = False
 
 

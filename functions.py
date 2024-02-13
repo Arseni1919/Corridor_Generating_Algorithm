@@ -149,10 +149,8 @@ def check_actions_if_vc(agents, actions):
 
 def check_if_vc(agents):
     for agent1, agent2 in combinations(agents, 2):
-        vertex1 = agent1.curr_node.xy_name
-        vertex2 = agent2.curr_node.xy_name
-        if vertex1 == vertex2:
-            raise RuntimeError(f'vertex collision: {agent1.name} and {agent2.name} in {vertex1}')
+        if agent1.curr_node == agent2.curr_node:
+            raise RuntimeError(f'vertex collision: {agent1.name} and {agent2.name} in {agent1.curr_node.xy_name}')
             # print(f'\nvertex collision: {agent1.name} and {agent2.name} in {vertex1}')
 
 
@@ -167,8 +165,8 @@ def check_actions_if_ec(agents, actions):
 
 def check_if_ec(agents):
     for agent1, agent2 in combinations(agents, 2):
-        edge1 = (agent1.prev_node.xy_name, agent1.curr_node.xy_name)
-        edge2 = (agent2.curr_node.xy_name, agent2.prev_node.xy_name)
+        edge1 = (agent1.prev_node.x, agent1.prev_node.y, agent1.curr_node.x, agent1.curr_node.y)
+        edge2 = (agent2.curr_node.x, agent2.curr_node.y, agent2.prev_node.x, agent2.prev_node.y)
         if edge1 == edge2:
             raise RuntimeError(f'edge collision: {agent1.name} and {agent2.name} in {edge1}')
             # print(f'\nedge collision: {agent1.name} and {agent2.name} in {edge1}')

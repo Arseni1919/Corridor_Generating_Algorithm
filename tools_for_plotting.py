@@ -125,6 +125,19 @@ def plot_unique_movements(ax, info):
     # set_legend(ax, size=12)
 
 
+def plot_total_finished_goals(ax, info):
+    ax.cla()
+    total_finished_goals_list = info['total_finished_goals_list']
+    iterations = info['iterations']
+    ax.plot(total_finished_goals_list)
+    ax.set_xlim([0, iterations])
+    ax.set_xlabel('iters')
+    ax.set_ylabel('Total Finished Goals')
+    # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
+    set_plot_title(ax, f'title', size=10)
+    # set_legend(ax, size=12)
+
+
 def plot_flow_in_env(ax, info):
     ax.cla()
     img_np = info['img_np']
@@ -181,11 +194,12 @@ def plot_step_in_env(ax, info):
     img_dir = info['img_dir']
     img_np = info['img_np']
     agents = info['agents']
-    corridor = info['corridor']
 
     field = img_np * -1
-    for n in corridor:
-        img_np[n.x, n.y] = 2
+    if 'corridor' in info:
+        corridor = info['corridor']
+        for n in corridor:
+            img_np[n.x, n.y] = 2
     others_y_list, others_x_list, others_cm_list = [], [], []
     for agent in agents:
         curr_node = agent.curr_node

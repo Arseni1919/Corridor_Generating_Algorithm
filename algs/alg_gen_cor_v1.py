@@ -196,6 +196,7 @@ class ALgCC:
     def initiate_problem(self, start_node_names: List[str], corridor_names: List[str]) -> None:
         self.start_nodes = [self.nodes_dict[snn] for snn in start_node_names]
         self.corridor = [self.nodes_dict[cn] for cn in corridor_names]
+        self._check_solvability()
         self._create_agents()
         self._solve()
 
@@ -205,6 +206,9 @@ class ALgCC:
             agent.name: agent.path[iteration].xy_name for agent in self.agents
         }
         return actions
+
+    def _check_solvability(self):
+        assert len(self.nodes) - len(self.start_nodes) >= len(self.corridor), 'UNSOLVABLE'
 
     def _create_agents(self) -> None:
         self.agents: List[AlgAgentCC] = []

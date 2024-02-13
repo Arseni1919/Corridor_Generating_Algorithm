@@ -91,7 +91,7 @@ class SimEnvCC:
         return obs, metrics, self.terminated, info
 
     def _check_solvability(self):
-        assert len(self.nodes) - len(self.start_nodes) >= len(self.corridor)
+        assert len(self.nodes) - len(self.start_nodes) >= len(self.corridor), 'UNSOLVABLE'
 
     def _create_agents(self) -> None:
         self.agents: List[SimAgentCC] = []

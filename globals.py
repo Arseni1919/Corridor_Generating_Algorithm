@@ -7,7 +7,7 @@ from functools import lru_cache
 from collections import OrderedDict
 import itertools
 from itertools import combinations, permutations, tee
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, namedtuple
 from datetime import datetime
 import time
 import json
@@ -41,6 +41,8 @@ from scipy.spatial.distance import cdist
 # import torchvision
 # import torchvision.transforms as T
 # from torchvision.io import ImageReadMode
+
+AgentTuple = namedtuple('AgentTuple', ['num', 'start_node_name', 'curr_node_name', 'next_goal_node_name'])
 
 markers = ['-^', '-1', '-2', '-X', '-d', '-v', '-o']
 markers_iter = iter(markers)
