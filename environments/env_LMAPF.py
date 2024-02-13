@@ -17,6 +17,7 @@ class SimAgentLMAPF:
         self.path: List[Node] = []
         self.unique_moves: List[Node] = []
         self.finished_goals: List[Node] = []
+        self.arrived: bool = False
 
     @property
     def name(self):
@@ -125,9 +126,11 @@ class SimEnvLMAPF:
             if agent.next_goal_node is None:
                 self.assign_next_goal(agent)
                 continue
-            if agent.curr_node == agent.next_goal_node:
+            agent.arrived = agent.curr_node == agent.next_goal_node
+            if agent.arrived:
                 agent.finished_goals.append(agent.next_goal_node)
                 self.assign_next_goal(agent)
+
 
     def _check_solvability(self):
         assert len(self.nodes) - len(self.start_nodes) >= self.corridor_size
@@ -162,6 +165,7 @@ class SimEnvLMAPF:
                        'start_node_name': agent.start_node.xy_name,
                        'curr_node_name': agent.curr_node.xy_name,
                        'next_goal_node_name': agent.next_goal_node.xy_name,
+                       'arrived': agent.arrived,
                    })
                for agent in self.agents
                }

@@ -8,6 +8,43 @@ from environments.env_LMAPF import SimEnvLMAPF
 from alg_gen_cor_v1 import copy_nodes
 
 
+def get_path_to_agent_in_corridor():
+    pass
+
+
+def clean_corridor(corridor: List[Node]) -> dict:
+    alt_paths_dict = {}
+    return alt_paths_dict
+
+
+def build_perm_constr_list(curr_iteration: int, finished_agents: list, nodes: List[Node]) -> Tuple[Dict[str, List[Node]], List[Node]]:
+    perm_constr_dict = {node.xy_name: [] for node in nodes}
+    occupied_nodes: List[Node] = []
+    for agent in finished_agents:
+        a_path = agent.path[curr_iteration:]
+        for n in a_path:
+            perm_constr_dict[n.xy_name].append(0)
+            occupied_nodes.append(n)
+    return perm_constr_dict, occupied_nodes
+
+
+def calc_corridor(next_agent, nodes, nodes_dict, h_func, corridor_size, perm_constr_dict: Dict[str, List[Node]]) -> List[Node] | None:
+    v_constr_dict = {node.xy_name: [] for node in nodes}
+    e_constr_dict = {node.xy_name: [] for node in nodes}
+    result, info = a_star_xyt(
+        start=next_agent.curr_node, goal=next_agent.next_goal_node, nodes=nodes, h_func=h_func,
+        v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict, perm_constr_dict=perm_constr_dict,
+        plotter=None, middle_plot=False, nodes_dict=nodes_dict,
+        xyt_problem=True, k_time=corridor_size,
+    )
+    if result:
+        out_result = result[1:]
+        r_names = list(set([n.xy_name for n in out_result]))
+        out_result = [nodes_dict[r_name] for r_name in r_names]
+        return out_result
+    return None
+
+
 class AlgAgentLMAPF:
 
     def __init__(self, num: int, start_node: Node, next_goal_node: Node):
@@ -16,6 +53,7 @@ class AlgAgentLMAPF:
         self.curr_node: Node = start_node
         self.next_goal_node: Node = next_goal_node
         self.path: List[Node] = [start_node]
+        self.arrived: bool = False
 
         # self.free_node: Node | None = None
         # self.spanning_tree_dict: Dict[str, str | None] | None = None
@@ -66,17 +104,20 @@ class ALgLMAPFGenCor:
         self.max_time: int | None = self.env.max_time
         self.corridor_size: int = self.env.corridor_size
 
+        self.global_order: List[AlgAgentLMAPF] = []
+
     def initiate_problem(self, obs: dict) -> None:
         self.start_nodes = [self.nodes_dict[s_name] for s_name in obs['start_nodes_names']]
         self._check_solvability()
         self._create_agents(obs)
+        self.global_order = self.agents[:]
 
     def get_actions(self, obs: dict) -> Dict[str, str]:
-        iteration = obs['iteration']
-        self._update_agents(obs, iteration)
-        self.calc_next_steps(iteration)
+        next_iteration = obs['iteration']
+        self._update_agents(obs, next_iteration)
+        self.calc_next_steps(next_iteration)
         actions = {
-            agent.name: agent.path[iteration].xy_name for agent in self.agents
+            agent.name: agent.path[next_iteration].xy_name for agent in self.agents
         }
         return actions
 
@@ -96,16 +137,95 @@ class ALgLMAPFGenCor:
             self.agents.append(new_agent)
             self.agents_dict[new_agent.name] = new_agent
 
-    def _update_agents(self, obs: dict, iteration: int) -> None:
+    def _update_agents(self, obs: dict, next_iteration: int) -> None:
         for env_agent in self.agents:
             obs_agent = obs[env_agent.name]
             env_agent.curr_node = self.nodes_dict[obs_agent.curr_node_name]
             env_agent.next_goal_node = self.nodes_dict[obs_agent.next_goal_node_name]
-            assert iteration != 0
-            assert env_agent.curr_node == env_agent.path[iteration - 1]
+            env_agent.arrived = self.nodes_dict[obs_agent.arrived]
+            assert next_iteration != 0
+            assert env_agent.curr_node == env_agent.path[next_iteration - 1]
 
-    def calc_next_steps(self, iteration: int) -> None:
-        pass
+    def _update_global_order(self):
+        unfinished_agents, finished_agents = [], []
+        for agent in self.global_order:
+            if agent.arrived:
+                finished_agents.append(agent)
+            else:
+                unfinished_agents.append(agent)
+        self.global_order = unfinished_agents
+        self.global_order.extend(finished_agents)
+
+    def _plan_for_agent(self, next_agent: AlgAgentLMAPF, next_iteration: int, finished_agents: List[AlgAgentLMAPF],
+                        unfinished_agents: Deque[AlgAgentLMAPF], failed_agents: List[AlgAgentLMAPF], node_name_to_agent_dict: dict) -> Tuple[bool, List[AlgAgentLMAPF]]:
+        l_agents = list(unfinished_agents)
+        l_agents.extend(failed_agents)
+        assert next_agent not in finished_agents
+        assert next_agent not in l_agents
+
+        # there is a plan up until the goal location
+        if next_agent.path[-1] == next_agent.next_goal_node:
+            return True, []
+        curr_iteration = next_iteration - 1
+
+        # the given path cannot be longer than the corridor size
+        assert self.corridor_size > len(next_agent.path[curr_iteration:])
+
+        # calc the new corridor
+        perm_constr_dict, occupied_nodes = build_perm_constr_list(curr_iteration, finished_agents, self.nodes)
+        corridor = calc_corridor(next_agent, self.nodes, self.nodes_dict, self.h_func, self.corridor_size, perm_constr_dict)
+        if not corridor:
+            return False, []
+
+        # node_name_to_unfinished_dict = {a.curr_node.xy_name: a for a in self.agents}
+        agents_in_corridor = [a for a in l_agents if a.curr_node in corridor]
+        if len(agents_in_corridor) == 0:
+            # no need to move anybody
+            next_agent.path = next_agent.path[:curr_iteration + 1].extend(corridor)
+            return True, []
+
+        for a in agents_in_corridor:
+            assert a in l_agents
+
+        # check if solvable (can be still unsolvable after the check)
+        if len(self.nodes) - len(occupied_nodes) - len(corridor) - 1 < len(agents_in_corridor):
+            return False, []
+
+        # move others out of the corridor
+        alt_paths_dict = clean_corridor()
+
+        # assign new paths to the next_agent and other captured agents
+        captured_agents: List[AlgAgentLMAPF] = []
+        next_agent.path = get_path_to_agent_in_corridor()
+        for agent_name, alt_path in alt_paths_dict.items():
+            o_agent = self.agents_dict[agent_name]
+            o_agent.path = o_agent.path[:curr_iteration].extend(alt_path)
+            captured_agents.append(o_agent)
+        return True, captured_agents
+
+    def calc_next_steps(self, next_iteration: int) -> None:
+        # first - is the highest
+        self._update_global_order()
+        unfinished_agents: Deque[AlgAgentLMAPF] = deque(self.global_order)
+        failed_agents: List[AlgAgentLMAPF] = []
+        finished_agents: List[AlgAgentLMAPF] = []
+        node_name_to_agent_dict = {a.curr_node.xy_name: a for a in self.agents}
+        while len(unfinished_agents) > 0:
+            next_agent = unfinished_agents.popleft()
+            if next_agent in finished_agents:
+                continue
+            planned, captured_agents = self._plan_for_agent(next_agent, next_iteration, finished_agents,
+                                                            unfinished_agents, failed_agents, node_name_to_agent_dict)
+            if planned:
+                finished_agents.append(next_agent)
+                finished_agents.extend(captured_agents)
+                failed_agents = filter(lambda n: n not in finished_agents, failed_agents)
+            else:
+                failed_agents.append(next_agent)
+                # unfinished_agents.append(next_agent)
+        for f_agent in failed_agents:
+            f_agent.path = f_agent.path[:next_iteration]
+            f_agent.path.append(f_agent.path[-1])
 
 
 @use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
@@ -137,7 +257,6 @@ def main():
     # problem creation
     env = SimEnvLMAPF(img_dir=img_dir)
     start_nodes = random.sample(env.nodes, N)
-
 
     # for rendering
     if to_render:
@@ -192,6 +311,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
