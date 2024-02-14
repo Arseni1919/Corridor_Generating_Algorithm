@@ -42,7 +42,7 @@ from scipy.spatial.distance import cdist
 # import torchvision.transforms as T
 # from torchvision.io import ImageReadMode
 
-AgentTuple = namedtuple('AgentTuple', ['num', 'start_node_name', 'curr_node_name', 'next_goal_node_name'])
+AgentTuple = namedtuple('AgentTuple', ['num', 'start_node_name', 'curr_node_name', 'next_goal_node_name', 'arrived'])
 
 markers = ['-^', '-1', '-2', '-X', '-d', '-v', '-o']
 markers_iter = iter(markers)

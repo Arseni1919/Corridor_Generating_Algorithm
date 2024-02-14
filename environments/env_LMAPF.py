@@ -144,8 +144,9 @@ class SimEnvLMAPF:
             self.agents_dict[new_agent.name] = new_agent
 
     def _execute_actions(self, actions: Dict[str, str]) -> None:
-        for agent_name, next_node_name in actions.items():
-            agent = self.agents_dict[agent_name]
+        for agent in self.agents:
+        # for agent_name, next_node_name in actions.items():
+            next_node_name = actions[agent.name]
             next_node = self.nodes_dict[next_node_name]
             agent.prev_node = agent.curr_node
             agent.curr_node = next_node
@@ -154,9 +155,9 @@ class SimEnvLMAPF:
             if agent.prev_node.xy_name != agent.curr_node.xy_name:
                 agent.unique_moves.append(agent.curr_node)
         # checks
-        check_if_nei_pos(self.agents)
-        check_if_vc(self.agents)
-        check_if_ec(self.agents)
+        # check_if_nei_pos(self.agents)
+        # check_if_vc(self.agents)
+        # check_if_ec(self.agents)
 
     def _get_obs(self) -> Dict[str, Any]:
         obs = {agent.name:

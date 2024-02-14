@@ -189,9 +189,6 @@ def plot_step_in_env(ax, info):
     ax.cla()
     # nodes = info['nodes']
     # a_name = info['i_agent'].name if 'i_agent' in info else 'agent_0'
-    curr_iteration = info["i"]
-    n_agents = info['n_agents']
-    img_dir = info['img_dir']
     img_np = info['img_np']
     agents = info['agents']
 
@@ -199,9 +196,17 @@ def plot_step_in_env(ax, info):
     if 'corridor' in info:
         corridor = info['corridor']
         for n in corridor:
-            img_np[n.x, n.y] = 2
+            field[n.x, n.y] = 2
+    if 'occupied_nodes' in info:
+        occupied_nodes = info['occupied_nodes']
+        for n in occupied_nodes:
+            field[n.x, n.y] = 0
+    ax.imshow(field, origin='lower')
+
     others_y_list, others_x_list, others_cm_list = [], [], []
     for agent in agents:
+        if 'i_agent' in info and info['i_agent'] == agent:
+            continue
         curr_node = agent.curr_node
         others_y_list.append(curr_node.y)
         others_x_list.append(curr_node.x)
@@ -210,10 +215,29 @@ def plot_step_in_env(ax, info):
     ax.scatter(others_y_list, others_x_list, s=50, c=np.array(others_cm_list))
     # ax.scatter(others_y_list, others_x_list, s=50, c='yellow')
 
-    ax.imshow(field, origin='lower')
-    ax.set_title(f'Map: {img_dir[:-4]}\n '
-                 f'{n_agents} agents '  # , selected: {one_master.name} - {one_master.order}\n
-                 f'(iteration: {curr_iteration + 1})')
+    if 'i_agent' in info:
+        i_agent = info['i_agent']
+        curr_node = i_agent.curr_node
+        next_goal_node = i_agent.next_goal_node
+        ax.scatter([curr_node.y], [curr_node.x], s=60, c='w')
+        ax.scatter([curr_node.y], [curr_node.x], s=30, c='r')
+        ax.scatter([next_goal_node.y], [next_goal_node.x], s=200, c='white', marker='X')
+        ax.scatter([next_goal_node.y], [next_goal_node.x], s=100, c='red', marker='X')
+
+    title_str = 'plot_step_in_env\n'
+    if 'to_title' in info:
+        to_title = info['to_title']
+        title_str += f'{to_title}\n '
+    if 'img_dir' in info:
+        img_dir = info['img_dir']
+        title_str += f'Map: {img_dir[:-4]}\n '
+    if 'n_agents' in info:
+        n_agents = info['n_agents']
+        title_str += f'{n_agents} agents '
+    if 'i' in info:
+        i = info['i']
+        title_str += f'(iteration: {i + 1})'
+    ax.set_title(title_str)
 
 
 def plot_env_field(ax, info):
