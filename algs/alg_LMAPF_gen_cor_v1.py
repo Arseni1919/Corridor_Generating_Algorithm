@@ -9,6 +9,12 @@ from alg_gen_cor_v1 import copy_nodes
 from alg_clean_corridor import clean_corridor, get_path_through_corridor
 
 
+def get_agents_in_corridor(corridor, node_name_to_agent_dict):
+    corridor_names = list(set([n.xy_name for n in corridor]))
+    agents_in_corridor = [node_name_to_agent_dict[node_name] for node_name in corridor_names if node_name in node_name_to_agent_dict]
+    return agents_in_corridor
+
+
 def build_perm_constr_list(curr_iteration: int, finished_agents: list, nodes: List[Node]) -> Tuple[
     Dict[str, List[Node]], List[Node]]:
     perm_constr_dict = {node.xy_name: [] for node in nodes}
@@ -29,7 +35,7 @@ def calc_corridor(next_agent, nodes, nodes_dict, h_func, corridor_size, perm_con
         start=next_agent.curr_node, goal=next_agent.next_goal_node, nodes=nodes, h_func=h_func,
         v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict, perm_constr_dict=perm_constr_dict,
         plotter=None, middle_plot=False, nodes_dict=nodes_dict,
-        xyt_problem=False, k_time=corridor_size,
+        xyt_problem=True, k_time=corridor_size,
     )
     return result
 
@@ -160,23 +166,25 @@ class ALgLMAPFGenCor:
         l_agents.extend(failed_agents)
         assert next_agent not in finished_agents
         assert next_agent not in l_agents
+        for a in finished_agents:
+            assert a not in l_agents
 
         curr_iteration = next_iteration - 1
 
         # the given path cannot be longer than the corridor size
-        assert self.corridor_size > len(next_agent.path[curr_iteration:])
+        # assert self.corridor_size > len(next_agent.path[curr_iteration:])
 
-        # there is a plan up until the goal location
         corridor = next_agent.path[curr_iteration:]
         perm_constr_dict, occupied_nodes = build_perm_constr_list(curr_iteration, finished_agents, self.nodes)
         # calc the new corridor
+        # there is not a plan up until the goal location
         if next_agent.path[-1] != next_agent.next_goal_node:
             corridor = calc_corridor(next_agent, self.nodes, self.nodes_dict, self.h_func, self.corridor_size,
                                      perm_constr_dict)
             if not corridor:
                 return False, []
         # node_name_to_unfinished_dict = {a.curr_node.xy_name: a for a in self.agents}
-        agents_in_corridor = [node_name_to_agent_dict[n.xy_name] for n in corridor if n.xy_name in node_name_to_agent_dict]
+        agents_in_corridor = get_agents_in_corridor(corridor, node_name_to_agent_dict)
         agents_in_corridor.remove(next_agent)
         if len(agents_in_corridor) == 0:
             # no need to move anybody
@@ -187,10 +195,13 @@ class ALgLMAPFGenCor:
         for a in agents_in_corridor:
             assert a in l_agents
 
+        for a in finished_agents:
+            assert a not in l_agents
+
         # FOR SURE THERE ARE OTHER AGENT ON THE ROAD HERE!
 
         # move others out of the corridor
-        succeeded, alt_paths_dict = clean_corridor(
+        succeeded, cc_paths_dict = clean_corridor(
             next_agent, corridor, agents_in_corridor, occupied_nodes, l_agents,
             node_name_to_agent_dict, self.nodes, self.nodes_dict, self.img_np,
             curr_iteration=curr_iteration
@@ -200,14 +211,19 @@ class ALgLMAPFGenCor:
 
         # assign new paths to the next_agent and other captured agents
         captured_agents: List[AlgAgentLMAPF] = []
-        path_through_corridor = get_path_through_corridor()
+        path_through_corridor = get_path_through_corridor(next_agent, corridor, cc_paths_dict)
         next_agent.path = next_agent.path[:curr_iteration]
         next_agent.path.extend(path_through_corridor)
-        for agent_name, alt_path in alt_paths_dict.items():
+        for agent_name, alt_path in cc_paths_dict.items():
             o_agent = self.agents_dict[agent_name]
             o_agent.path = o_agent.path[:curr_iteration]
             o_agent.path.extend(alt_path)
             captured_agents.append(o_agent)
+
+        agents_to_check = [a for a in self.agents if len(a.path[next_iteration:]) > 1]
+        check_if_nei_pos_iter(agents_to_check, next_iteration)
+        check_if_vc_iter(agents_to_check, next_iteration)
+        check_if_ec_iter(agents_to_check, next_iteration)
         return True, captured_agents
 
     def calc_next_steps(self, next_iteration: int) -> None:
@@ -227,6 +243,7 @@ class ALgLMAPFGenCor:
                 finished_agents.append(next_agent)
                 finished_agents.extend(captured_agents)
                 failed_agents = list(filter(lambda n: n not in finished_agents, failed_agents))
+                unfinished_agents = deque(filter(lambda n: n not in finished_agents, unfinished_agents))
             else:
                 failed_agents.append(next_agent)
                 # unfinished_agents.append(next_agent)
