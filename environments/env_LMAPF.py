@@ -155,9 +155,9 @@ class SimEnvLMAPF:
             if agent.prev_node.xy_name != agent.curr_node.xy_name:
                 agent.unique_moves.append(agent.curr_node)
         # checks
-        # check_if_nei_pos(self.agents)
-        # check_if_vc(self.agents)
-        # check_if_ec(self.agents)
+        check_if_nei_pos(self.agents)
+        check_if_vc(self.agents)
+        check_if_ec(self.agents)
 
     def _get_obs(self) -> Dict[str, Any]:
         obs = {agent.name:

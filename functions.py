@@ -163,7 +163,7 @@ def check_if_vc(agents):
 def check_if_vc_iter(agents, iteration):
     for agent1, agent2 in combinations(agents, 2):
         if agent1.path[iteration] == agent2.path[iteration]:
-            raise RuntimeError(f'vertex collision: {agent1.name} and {agent2.name} in {agent1.curr_node.xy_name}')
+            raise RuntimeError(f'vertex collision: {agent1.name} and {agent2.name} in {agent1.path[iteration].xy_name}')
 
 
 def check_actions_if_ec(agents, actions):

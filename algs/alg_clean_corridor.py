@@ -92,7 +92,7 @@ def roll_c_agent(
     # if need to wait
     time_to_wait = 0
     for ex_agent_name, ex_tube in executed_tubes_dict.items():
-        if len(intersection(tube, ex_tube)) > 0:
+        if len(intersection([n.xy_name for n in tube], [n.xy_name for n in ex_tube])) > 0:
             time_to_wait = max(time_to_wait, len(l_agents_paths_dict[ex_agent_name]))
     for t_agent in t_agents:
         while len(l_agents_paths_dict[t_agent.name]) < time_to_wait:
@@ -147,6 +147,9 @@ def clean_corridor(
     agents_in_corridor: deque = deque(input_agents_in_corridor)
     l_agents_paths_dict = {a.name: [a.curr_node] for a in l_agents}
 
+    for a in agents_in_corridor:
+        assert a in l_agents
+
     # if to_render:
     #     fig, ax = plt.subplots(1, 2, figsize=(14, 7))
     #     agents_to_plot = [a for a in l_agents if len(l_agents_paths_dict[a.name]) == 1]
@@ -158,24 +161,23 @@ def clean_corridor(
     #     plt.show()
     #     plt.close()
 
-    final_order: list = []
     executed_tubes_dict: Dict[str, List[Node]] = {}
     counter = 0
     while len(agents_in_corridor) > 0:
         counter += 1
         # print(f'<{counter=}> {len(agents_in_corridor)=}')
         next_c_agent = agents_in_corridor.popleft()
-
-        if to_render and curr_iteration > 4:
-            fig, ax = plt.subplots(1, 2, figsize=(14, 7))
-            agents_to_plot = [a for a in l_agents if len(l_agents_paths_dict[a.name]) == 1]
-            plot_info = {'img_np': img_np, 'agents': agents_to_plot, 'corridor': corridor,
-                         'i_agent': next_c_agent, 'to_title': 'from clean_corridor 2',
-                         'i': curr_iteration, 'n_agents': len(l_agents),
-                         'occupied_nodes': occupied_nodes}
-            plot_step_in_env(ax[0], plot_info)
-            plt.show()
-            plt.close()
+        assert next_c_agent in l_agents
+        # if to_render and curr_iteration > 4:
+        #     fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+        #     agents_to_plot = [a for a in l_agents if len(l_agents_paths_dict[a.name]) == 1]
+        #     plot_info = {'img_np': img_np, 'agents': agents_to_plot, 'corridor': corridor,
+        #                  'i_agent': next_c_agent, 'to_title': 'from clean_corridor 2',
+        #                  'i': curr_iteration, 'n_agents': len(l_agents),
+        #                  'occupied_nodes': occupied_nodes}
+        #     plot_step_in_env(ax[0], plot_info)
+        #     plt.show()
+        #     plt.close()
 
         solvable, free_to_roll, tube = get_tube(
             next_c_agent, l_agents_paths_dict, l_agents, corridor, nodes, nodes_dict, occupied_nodes
@@ -188,12 +190,11 @@ def clean_corridor(
 
         if not free_to_roll:
             # there is a tube
-            agents_in_corridor.append(next_agent)
+            agents_in_corridor.append(next_c_agent)
             continue
 
         roll_c_agent(next_c_agent, tube, l_agents_paths_dict, l_agents, corridor, executed_tubes_dict)
         executed_tubes_dict[next_c_agent.name] = tube
-        final_order.append(next_agent)
 
     cc_paths_dict = {k: v for k, v in l_agents_paths_dict.items() if len(v) > 1}
     return True, cc_paths_dict
