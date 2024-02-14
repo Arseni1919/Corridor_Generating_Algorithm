@@ -40,8 +40,8 @@ class ALgCCv2(ALgCC):
             #     plt.close()
 
             # find free location
-            solvable, tube = self._get_tube(next_agent)
-            if not solvable:
+            free_to_roll, tube = self._get_tube(next_agent)
+            if not free_to_roll:
                 agents_in_corridor.appendleft(next_agent)
                 continue
 

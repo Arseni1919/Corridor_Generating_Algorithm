@@ -176,7 +176,7 @@ class ALgLMAPFGenCor:
             if not corridor:
                 return False, []
         # node_name_to_unfinished_dict = {a.curr_node.xy_name: a for a in self.agents}
-        agents_in_corridor = [a for a in self.agents if a.curr_node in corridor]
+        agents_in_corridor = [node_name_to_agent_dict[n.xy_name] for n in corridor if n.xy_name in node_name_to_agent_dict]
         agents_in_corridor.remove(next_agent)
         if len(agents_in_corridor) == 0:
             # no need to move anybody
@@ -193,7 +193,7 @@ class ALgLMAPFGenCor:
         succeeded, alt_paths_dict = clean_corridor(
             next_agent, corridor, agents_in_corridor, occupied_nodes, l_agents,
             node_name_to_agent_dict, self.nodes, self.nodes_dict, self.img_np,
-            curr_iteration
+            curr_iteration=curr_iteration
         )
         if not succeeded:
             return False, []
