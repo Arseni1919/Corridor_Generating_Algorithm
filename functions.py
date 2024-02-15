@@ -99,6 +99,41 @@ def check_if_nei_pos_iter(agents, iteration):
             raise RuntimeError('wow wow wow! Not nei pos!')
 
 
+def check_if_vc_iter(agents, iteration):
+    for agent1, agent2 in combinations(agents, 2):
+        if agent1.path[iteration] == agent2.path[iteration]:
+            raise RuntimeError(f'vertex collision: {agent1.name} and {agent2.name} in {agent1.path[iteration].xy_name}')
+
+
+def check_if_ec_iter(agents, iteration):
+    for agent1, agent2 in combinations(agents, 2):
+        prev_node1 = agent1.path[iteration - 1]
+        curr_node1 = agent1.path[iteration]
+        prev_node2 = agent2.path[iteration - 1]
+        curr_node2 = agent2.path[iteration]
+        edge1 = (prev_node1.x, prev_node1.y, curr_node1.x, curr_node1.y)
+        edge2 = (curr_node2.x, curr_node2.y, prev_node2.x, prev_node2.y)
+        if edge1 == edge2:
+            raise RuntimeError(f'edge collision: {agent1.name} and {agent2.name} in {edge1}')
+
+
+def check_vc_ec_neic_iter(agents, iteration):
+    for a1, a2 in combinations(agents, 2):
+        # vertex conf
+        assert a1.path[iteration] != a2.path[iteration], f'vertex conf: {a1.name}-{a2.name} in {a1.curr_node.xy_name}'
+        # edge conf
+        prev_node1 = a1.path[iteration - 1]
+        curr_node1 = a1.path[iteration]
+        prev_node2 = a2.path[iteration - 1]
+        curr_node2 = a2.path[iteration]
+        edge1 = (prev_node1.x, prev_node1.y, curr_node1.x, curr_node1.y)
+        edge2 = (curr_node2.x, curr_node2.y, prev_node2.x, prev_node2.y)
+        assert edge1 != edge2, f'edge collision: {a1.name}-{a2.name} in {edge1}'
+        # nei conf
+        assert a1.path[iteration].xy_name in a1.path[iteration - 1].neighbours, 'wow wow wow! Not nei pos!'
+    assert agents[-1].path[iteration].xy_name in agents[-1].path[iteration - 1].neighbours, 'wow wow wow! Not nei pos!'
+
+
 def plan_has_no_conf_with_vertex(plan, vertex):
     for plan_v in plan:
         if plan_v.xy_name == vertex.xy_name:
@@ -153,17 +188,25 @@ def check_actions_if_vc(agents, actions):
             # print(f'\nvertex collision: {agent1.name} and {agent2.name} in {vertex1}')
 
 
+def check_vc_ec_neic(agents):
+    for a1, a2 in combinations(agents, 2):
+        # vertex conf
+        assert a1.curr_node != a2.curr_node, f'vertex conf: {a1.name}-{a2.name} in {a1.curr_node.xy_name}'
+        # edge conf
+        edge1 = (a1.prev_node.x, a1.prev_node.y, a1.curr_node.x, a1.curr_node.y)
+        edge2 = (a2.curr_node.x, a2.curr_node.y, a2.prev_node.x, a2.prev_node.y)
+        assert edge1 != edge2, f'edge collision: {a1.name}-{a2.name} in {edge1}'
+        # nei conf
+        assert a1.curr_node.xy_name in a1.prev_node.neighbours, 'wow wow wow! Not nei pos!'
+    assert agents[-1].curr_node.xy_name in agents[-1].prev_node.neighbours, 'wow wow wow! Not nei pos!'
+
+
 def check_if_vc(agents):
-    for agent1, agent2 in combinations(agents, 2):
-        if agent1.curr_node == agent2.curr_node:
-            raise RuntimeError(f'vertex collision: {agent1.name} and {agent2.name} in {agent1.curr_node.xy_name}')
-            # print(f'\nvertex collision: {agent1.name} and {agent2.name} in {vertex1}')
-
-
-def check_if_vc_iter(agents, iteration):
-    for agent1, agent2 in combinations(agents, 2):
-        if agent1.path[iteration] == agent2.path[iteration]:
-            raise RuntimeError(f'vertex collision: {agent1.name} and {agent2.name} in {agent1.path[iteration].xy_name}')
+    for a1, a2 in combinations(agents, 2):
+        assert a1.curr_node != a2.curr_node, f'vertex conf: {a1.name}-{a2.name} in {a1.curr_node.xy_name}'
+        # if a1.curr_node == a2.curr_node:
+        #     raise RuntimeError(f'vertex conf: {a1.name}-{a2.name} in {a1.curr_node.xy_name}')
+            # print(f'\nvertex collision: {a1.name} and {a2.name} in {vertex1}')
 
 
 def check_actions_if_ec(agents, actions):
@@ -176,24 +219,13 @@ def check_actions_if_ec(agents, actions):
 
 
 def check_if_ec(agents):
-    for agent1, agent2 in combinations(agents, 2):
-        edge1 = (agent1.prev_node.x, agent1.prev_node.y, agent1.curr_node.x, agent1.curr_node.y)
-        edge2 = (agent2.curr_node.x, agent2.curr_node.y, agent2.prev_node.x, agent2.prev_node.y)
-        if edge1 == edge2:
-            raise RuntimeError(f'edge collision: {agent1.name} and {agent2.name} in {edge1}')
-            # print(f'\nedge collision: {agent1.name} and {agent2.name} in {edge1}')
-
-
-def check_if_ec_iter(agents, iteration):
-    for agent1, agent2 in combinations(agents, 2):
-        prev_node1 = agent1.path[iteration - 1]
-        curr_node1 = agent1.path[iteration]
-        prev_node2 = agent2.path[iteration - 1]
-        curr_node2 = agent2.path[iteration]
-        edge1 = (prev_node1.x, prev_node1.y, curr_node1.x, curr_node1.y)
-        edge2 = (curr_node2.x, curr_node2.y, prev_node2.x, prev_node2.y)
-        if edge1 == edge2:
-            raise RuntimeError(f'edge collision: {agent1.name} and {agent2.name} in {edge1}')
+    for a1, a2 in combinations(agents, 2):
+        edge1 = (a1.prev_node.x, a1.prev_node.y, a1.curr_node.x, a1.curr_node.y)
+        edge2 = (a2.curr_node.x, a2.curr_node.y, a2.prev_node.x, a2.prev_node.y)
+        assert edge1 != edge2, f'edge collision: {a1.name}-{a2.name} in {edge1}'
+        # if edge1 == edge2:
+        #     raise RuntimeError(f'edge collision: {a1.name} and {a2.name} in {edge1}')
+            # print(f'\nedge collision: {a1.name} and {a2.name} in {edge1}')
 
 
 def create_sub_results(h_agents):

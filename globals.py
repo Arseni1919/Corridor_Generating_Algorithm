@@ -47,7 +47,7 @@ AgentTuple = namedtuple('AgentTuple', ['num', 'start_node_name', 'curr_node_name
 markers = ['-^', '-1', '-2', '-X', '-d', '-v', '-o']
 markers_iter = iter(markers)
 markers_lines_dict = defaultdict(lambda: next(markers_iter))
-colors_dict = defaultdict(lambda: None)
+colors_dict: DefaultDict[str, str | None] = defaultdict(lambda: None)
 
 
 markers_lines_dict['LNS2'] = '-p'

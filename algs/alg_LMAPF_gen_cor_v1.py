@@ -1,18 +1,15 @@
 import matplotlib.pyplot as plt
 from collections import deque
+
+import numpy as np
+
 from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
 from algs.alg_a_star_space_time import a_star_xyt
 from environments.env_LMAPF import SimEnvLMAPF
 from alg_gen_cor_v1 import copy_nodes
-from alg_clean_corridor import clean_corridor, get_path_through_corridor
-
-
-def get_agents_in_corridor(corridor, node_name_to_agent_dict):
-    corridor_names = list(set([n.xy_name for n in corridor]))
-    agents_in_corridor = [node_name_to_agent_dict[node_name] for node_name in corridor_names if node_name in node_name_to_agent_dict]
-    return agents_in_corridor
+from alg_clean_corridor import *
 
 
 def build_perm_constr_list(curr_iteration: int, finished_agents: list, nodes: List[Node]) -> Tuple[Dict[str, List[Node]], List[Node]]:
@@ -48,39 +45,17 @@ def calc_corridor(next_agent, nodes, nodes_dict, h_func, corridor_size, perm_con
     return result
 
 
-def calc_simple_corridor(next_agent, nodes, nodes_dict, h_func, corridor_size, occupied_nodes: List[Node]) -> List[Node] | None:
-    corridor: List[Node] = [next_agent.curr_node]
-    for i in range(corridor_size):
-        next_node = corridor[-1]
-        node_name_to_h_value_dict = {
-            node_name: h_func(next_agent.next_goal_node, nodes_dict[node_name])
-            for node_name in next_node.neighbours
-        }
-        min_node_name = min(node_name_to_h_value_dict, key=node_name_to_h_value_dict.get)
-        min_node = nodes_dict[min_node_name]
-        if min_node in occupied_nodes:
-            return corridor
-        corridor.append(min_node)
-
-    return corridor
-
-
 class AlgAgentLMAPF:
 
     def __init__(self, num: int, start_node: Node, next_goal_node: Node):
         self.num = num
         self.start_node: Node = start_node
+        self.prev_node: Node = start_node
         self.curr_node: Node = start_node
+        self.next_node: Node = start_node
         self.next_goal_node: Node = next_goal_node
         self.path: List[Node] = [start_node]
         self.arrived: bool = False
-
-        # self.free_node: Node | None = None
-        # self.spanning_tree_dict: Dict[str, str | None] | None = None
-        # self.t_agents: list = []
-        # self.tube: List[Node] = []
-        # self.start_time: int = 0
-        # self.finish_time: int = 0
 
     @property
     def name(self):
@@ -99,16 +74,16 @@ class AlgAgentLMAPF:
         return self.curr_node.xy_name
 
     @property
+    def a_prev_node_name(self):
+        return self.prev_node.xy_name
+
+    @property
+    def a_next_node_name(self):
+        return self.next_node.xy_name
+
+    @property
     def a_next_goal_node_name(self):
         return self.next_goal_node.xy_name
-
-    # @property
-    # def t_agents_names(self):
-    #     return [a.name for a in self.t_agents]
-    #
-    # @property
-    # def tube_names(self):
-    #     return [n.xy_name for n in self.tube]
 
     def __eq__(self, other):
         return self.num == other.num
@@ -131,6 +106,7 @@ class ALgLMAPFGenCor:
 
         self.max_time: int | None = self.env.max_time
         self.corridor_size: int = self.env.corridor_size
+        self.next_iteration: int = 0
 
         self.global_order: List[AlgAgentLMAPF] = []
 
@@ -141,11 +117,14 @@ class ALgLMAPFGenCor:
         self.global_order = self.agents[:]
 
     def get_actions(self, obs: dict) -> Dict[str, str]:
-        next_iteration = obs['iteration']
-        self._update_agents(obs, next_iteration)
-        self.calc_next_steps(next_iteration)
+        # updates
+        self.next_iteration = obs['iteration']
+        self._update_agents(obs)
+        self._update_global_order()
+        # ---
+        self._calc_next_steps()
         actions = {
-            agent.name: agent.path[next_iteration].xy_name for agent in self.agents
+            agent.name: agent.path[self.next_iteration].xy_name for agent in self.agents
         }
         return actions
 
@@ -165,14 +144,13 @@ class ALgLMAPFGenCor:
             self.agents.append(new_agent)
             self.agents_dict[new_agent.name] = new_agent
 
-    def _update_agents(self, obs: dict, next_iteration: int) -> None:
-        for env_agent in self.agents:
-            obs_agent = obs[env_agent.name]
-            env_agent.curr_node = self.nodes_dict[obs_agent.curr_node_name]
-            env_agent.next_goal_node = self.nodes_dict[obs_agent.next_goal_node_name]
-            env_agent.arrived = obs_agent.arrived
-            assert next_iteration != 0
-            assert env_agent.curr_node == env_agent.path[next_iteration - 1]
+    def _update_agents(self, obs: dict) -> None:
+        for agent in self.agents:
+            obs_agent = obs[agent.name]
+            agent.prev_node = agent.curr_node
+            agent.curr_node = self.nodes_dict[obs_agent.curr_node_name]
+            agent.next_goal_node = self.nodes_dict[obs_agent.next_goal_node_name]
+            agent.arrived = obs_agent.arrived
 
     def _update_global_order(self):
         unfinished_agents, finished_agents = [], []
@@ -184,105 +162,226 @@ class ALgLMAPFGenCor:
         self.global_order = unfinished_agents
         self.global_order.extend(finished_agents)
 
-    def _plan_for_agent(self, next_agent: AlgAgentLMAPF, next_iteration: int, finished_agents: List[AlgAgentLMAPF],
-                        unfinished_agents: Deque[AlgAgentLMAPF], failed_agents: List[AlgAgentLMAPF],
-                        node_name_to_agent_dict: dict) -> Tuple[bool, List[AlgAgentLMAPF]]:
-        l_agents = list(unfinished_agents)
-        l_agents.extend(failed_agents)
-        assert next_agent not in finished_agents
-        assert next_agent not in l_agents
-        for a in finished_agents:
-            assert a not in l_agents
+    def _calc_next_steps(self) -> None:
+        """
+        for each agent:
+            - if there have future steps in the path -> continue
+            - check
+            # if you here, that means you don't have any future moves
+            - create your path while moving others out of your way (already created paths are walls for you)
+            - if you succeeded, add yourself and those agents, that you affected, to the list of already created paths
+            - check
+            - if you didn't succeed to create a path -> be flexible for others
+            - check
+        for each agent:
+            - if you still have no path (you didn't create it for yourself and others didn't do it for you) then stay at place for the next move
+            - check
+        :return:
+        """
 
-        curr_iteration = next_iteration - 1
+        # get all agents that already have plans for the future
+        assert self.next_iteration != 0
+        all_captured_agents: List[AlgAgentLMAPF] = []  # only for debug
+        planned_agents: List[AlgAgentLMAPF] = []
+        for agent in self.global_order:
+            assert agent.curr_node == agent.path[self.next_iteration - 1]
+            if len(agent.path[self.next_iteration:]) > 0:
+                assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
+                planned_agents.append(agent)
 
-        # the given path cannot be longer than the corridor size
-        # assert self.corridor_size > len(next_agent.path[curr_iteration:])
+        for agent in self.global_order:
+            # if there have future steps in the path -> continue
+            if agent in planned_agents:
+                continue
 
-        corridor = next_agent.path[curr_iteration:]
-        # perm_constr_dict, occupied_nodes = build_perm_constr_list(curr_iteration, finished_agents, self.nodes)
-        # corridor = calc_corridor(next_agent, self.nodes, self.nodes_dict, self.h_func, self.corridor_size, perm_constr_dict)
-        occupied_nodes = build_occupied_nodes(curr_iteration, finished_agents)
-        corridor = calc_simple_corridor(next_agent, self.nodes, self.nodes_dict, self.h_func, self.corridor_size, occupied_nodes)
-        # calc the new corridor
-        # there is not a plan up until the goal location
-        # if next_agent.path[-1] != next_agent.next_goal_node:
-        if not corridor:
+            # agents that are flexible for the current agent
+            flex_agents: List[AlgAgentLMAPF] = [a for a in self.agents if a not in planned_agents and a != agent]
+            assert agent not in flex_agents
+            assert agent not in planned_agents
+            for p_agent in planned_agents:
+                assert p_agent.curr_node == p_agent.path[self.next_iteration - 1]
+                assert len(p_agent.path[self.next_iteration:]) > 0
+                assert p_agent not in flex_agents
+            for f_agent in flex_agents:
+                assert f_agent.curr_node == f_agent.path[self.next_iteration - 1]
+                assert len(f_agent.path[self.next_iteration:]) == 0
+
+            # if you here, that means you don't have any future moves
+            # create your path while moving others out of your way (already created paths are walls for you)
+            planned, captured_agents = self._plan_for_agent(agent, planned_agents, flex_agents)
+
+            # if you succeeded, add yourself and those agents, that you affected, to the list of already created paths
+            if planned:
+                assert agent.curr_node == agent.path[self.next_iteration - 1]
+                assert len(agent.path[self.next_iteration:]) > 0
+                assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
+                for cap_agent in captured_agents:
+                    assert cap_agent.curr_node == cap_agent.path[self.next_iteration - 1]
+                    assert len(cap_agent.path[self.next_iteration:]) > 0
+                    assert cap_agent.path[self.next_iteration].xy_name in cap_agent.path[
+                        self.next_iteration - 1].neighbours
+                assert agent not in captured_agents
+
+                planned_agents.append(agent)
+                planned_agents.extend(captured_agents)
+                all_captured_agents.extend(captured_agents)  # only for debug
+                continue
+
+            # if you didn't succeed to create a path -> be flexible for others
+            assert not planned
+            assert len(captured_agents) == 0
+            assert agent.curr_node == agent.path[self.next_iteration - 1]
+            assert len(agent.path[self.next_iteration:]) == 0
+            for f_agent in flex_agents:
+                assert f_agent.curr_node == f_agent.path[self.next_iteration - 1]
+                assert len(f_agent.path[self.next_iteration:]) == 0
+
+        for agent in self.global_order:
+            # if you still have no path (you didn't create it for yourself and others didn't do it for you),
+            # then stay at place for the next move
+            if len(agent.path[self.next_iteration:]) == 0:
+                agent.path.append(agent.path[-1])
+                assert agent.path[-2] == agent.curr_node
+                assert agent.path[-1] == agent.curr_node
+                assert agent not in all_captured_agents
+                assert agent not in planned_agents
+            assert agent.curr_node == agent.path[self.next_iteration - 1]
+            assert len(agent.path[self.next_iteration:]) > 0
+            assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
+
+        check_vc_ec_neic_iter(self.agents, self.next_iteration)
+        # --------------------------- #
+
+    def _plan_for_agent(self, agent: AlgAgentLMAPF, planned_agents: List[AlgAgentLMAPF], flex_agents: List[AlgAgentLMAPF]) -> Tuple[bool, List[AlgAgentLMAPF]]:
+        """
+        v- create a relevant map where the planned agents are considered as walls
+        - check
+        v- create a corridor to agent's goal in the given map to the max length straight through descending h-values
+        - check
+        v- if a corridor just a single node (that means it only contains the current location), then return False
+        - check
+        v # if you are here that means the corridor is of the length of 2 or higher
+        - check
+        v- check if there are any agents inside the corridor
+        - check
+        v- if there are no agents inside the corridor, then update agent's path and return True with []
+        - check
+        v # if you are here that means there are other agents inside the corridor (lets call them c_agents)
+        - check
+        v- let's define a list of tubes that will include the free nodes that those c_agents will potentially capture
+        for c_agent in c_agents:
+            v- try to create a tube + free_node for c_agent (a new free_node must be different from other free_nodes)
+            - check
+            v- if there is no tube, then return False
+            - check
+            v- tubes <- tube, free_node
+            - check
+        - check
+        v # if you are here that means all c_agents found their tubes, and we are ready to move things
+        - check
+        v # up until now no one moved
+        - check
+        v- let's define captured_agents to be the list of all agents that we will move in addition to the main agent
+        - check
+        for tube in tubes:
+            - check
+            v- let's call all agents in the tube as t_agents
+            - check
+            v- move all t_agents forward such that the free node will be occupied, the last node will be free
+               and the rest of the nodes inside a tube will remain state the same state
+            - check
+            v- add t_agents to the captured_agents
+            - check
+        v- finally, let's move the main agent through the corridor
+        - check
+        return True and captured_agents
+
+        :param agent:
+        :param planned_agents:
+        :param flex_agents:
+        :return: planned, captured_agents
+        """
+
+        # create a relevant map where the planned agents are considered as walls
+        new_map: np.ndarray = create_new_map(self.img_np, planned_agents, self.next_iteration)
+        fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+        agents_to_plot = [a for a in flex_agents]
+        agents_to_plot.append(agent)
+        plot_info = {'img_np': new_map, 'agents': agents_to_plot}
+        plot_step_in_env(ax[0], plot_info)
+        plt.show()
+
+        # create a corridor to agent's goal in the given map to the max length straight through descending h-values
+        corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_func, self.corridor_size, new_map)
+        # if a corridor just a single node (that means it only contains the current location), then return False
+        assert len(corridor) != 0
+        if len(corridor) == 1:
+            assert corridor[-1] == agent.curr_node
             return False, []
-        # node_name_to_unfinished_dict = {a.curr_node.xy_name: a for a in self.agents}
-        agents_in_corridor = get_agents_in_corridor(corridor, node_name_to_agent_dict)
-        agents_in_corridor.remove(next_agent)
-        if len(agents_in_corridor) == 0:
-            # no need to move anybody
-            next_agent.path = next_agent.path[:curr_iteration]
-            next_agent.path.extend(corridor)
+
+        # if you are here that means the corridor is of the length of 2 or higher
+        assert len(corridor) >= 2
+        assert corridor[0] == agent.curr_node
+        for n in corridor:
+            assert new_map[n.x, n.y]
+
+        # check if there are any agents inside the corridor
+        c_agents: List[AlgAgentLMAPF] = get_agents_in_corridor(corridor, flex_agents)
+
+        # if there are no agents inside the corridor, then update agent's path and return True with []
+        if len(c_agents) == 0:
+            agent.path.append(corridor[1:])
             return True, []
 
-        for a in agents_in_corridor:
-            assert a in l_agents
+        # if you are here that means there are other agents inside the corridor (lets call them c_agents)
+        assert len(c_agents) > 0
 
-        for a in finished_agents:
-            assert a not in l_agents
+        # the c_agents are not allowed to pass through current location of the agent
+        corridor_for_c_agents = corridor[1:]
+        new_map[agent.curr_node.x, agent.curr_node.y] = 0
+        tubes: List[Tube] = []
 
-        # FOR SURE THERE ARE OTHER AGENT ON THE ROAD HERE!
+        for c_agent in c_agents:
+            # try to create a tube + free_node for c_agent (a new free_node must be different from other free_nodes)
+            solvable, tube = get_tube(
+                c_agent, new_map, tubes, corridor_for_c_agents, self.nodes_dict, flex_agents
+            )
 
-        # move others out of the corridor
-        succeeded, cc_paths_dict = clean_corridor(
-            next_agent, corridor, agents_in_corridor, occupied_nodes, l_agents,
-            node_name_to_agent_dict, self.nodes, self.nodes_dict, self.img_np,
-            curr_iteration=curr_iteration
-        )
-        if not succeeded:
-            return False, []
+            # if there is no tube, then return False
+            if not solvable:
+                return False, []
 
-        # assign new paths to the next_agent and other captured agents
+            # tubes <- tube, free_node
+            tubes.append(tube)
+
+        # if you are here that means all c_agents found their tubes, and we are ready to move things
+        for tube in tubes:
+            assert len(tube) >= 2
+
+        # up until now no one moved
+        assert len(agent.path[self.next_iteration:]) == 0
+        for f_agent in flex_agents:
+            assert len(f_agent.path[self.next_iteration:]) == 0
+
+        # let's define captured_agents to be the list of all agents that we will move in addition to the main agent
         captured_agents: List[AlgAgentLMAPF] = []
-        path_through_corridor = get_path_through_corridor(next_agent, corridor, cc_paths_dict)
-        next_agent.path = next_agent.path[:curr_iteration]
-        next_agent.path.extend(path_through_corridor)
-        for agent_name, alt_path in cc_paths_dict.items():
-            o_agent = self.agents_dict[agent_name]
-            o_agent.path = o_agent.path[:curr_iteration]
-            o_agent.path.extend(alt_path)
-            captured_agents.append(o_agent)
 
-        # agents_to_check = [a for a in self.agents if a in finished_agents]
-        # agents_to_check.extend([a for a in self.agents if a in captured_agents])
-        # agents_to_check.append(next_agent)
-        # check_if_nei_pos_iter(agents_to_check, next_iteration)
-        # check_if_vc_iter(agents_to_check, next_iteration)
-        # check_if_ec_iter(agents_to_check, next_iteration)
+        # NOW THE AGENTS WILL PLAN FUTURE STEPS
+        for tube in tubes:
+            # let's call all agents in the tube as t_agents
+            t_agents = find_t_agents(tube, flex_agents)
+            # move all t_agents forward such that the free node will be occupied, the last node will be free,
+            # and the rest of the nodes inside a tube will remain state the same state
+            tube.move(t_agents)
+            captured_agents.extend(t_agents)
+
+        # finally, let's move the main agent through the corridor
+        move_main_agent(agent, corridor, captured_agents)
+
         return True, captured_agents
 
-    def calc_next_steps(self, next_iteration: int) -> None:
-        # first - is the highest
-        self._update_global_order()
-        unfinished_agents: Deque[AlgAgentLMAPF] = deque(self.global_order)
-        failed_agents: List[AlgAgentLMAPF] = []
-        finished_agents: List[AlgAgentLMAPF] = []
-        node_name_to_agent_dict = {a.curr_node.xy_name: a for a in self.agents}
-        while len(unfinished_agents) > 0:
-            next_agent = unfinished_agents.popleft()
-            if next_agent in finished_agents:
-                continue
-            planned, captured_agents = self._plan_for_agent(
-                next_agent, next_iteration, finished_agents, unfinished_agents, failed_agents, node_name_to_agent_dict)
-            if planned:
-                finished_agents.append(next_agent)
-                finished_agents.extend(captured_agents)
-                failed_agents = list(filter(lambda n: n not in finished_agents, failed_agents))
-                unfinished_agents = deque(filter(lambda n: n not in finished_agents, unfinished_agents))
-            else:
-                failed_agents.append(next_agent)
-                # unfinished_agents.append(next_agent)
-        for f_agent in failed_agents:
-            f_agent.path = f_agent.path[:next_iteration]
-            f_agent.path.append(f_agent.path[-1])
+        # ----------------------------- #
 
-        # checks
-        check_if_nei_pos_iter(self.agents, next_iteration)
-        check_if_vc_iter(self.agents, next_iteration)
-        check_if_ec_iter(self.agents, next_iteration)
 
 
 @use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
@@ -290,8 +389,8 @@ def main():
     set_seed(random_seed_bool=False, seed=218)
     # set_seed(random_seed_bool=True)
     # N = 70
-    N = 100
-    # N = 300
+    # N = 100
+    N = 300
     # N = 400
     # N = 500
     # N = 600
@@ -314,11 +413,11 @@ def main():
     # problem creation
     env = SimEnvLMAPF(img_dir=img_dir)
     start_nodes = random.sample(env.nodes, N)
+    plot_rate = 0.5
 
     # for rendering
     if to_render:
         fig, ax = plt.subplots(1, 2, figsize=(14, 7))
-        plot_rate = 0.1
         total_unique_moves_list = []
         total_finished_goals_list = []
 
@@ -371,3 +470,28 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+
+# # move others out of the corridor
+# succeeded, cc_paths_dict = clean_corridor(
+#     next_agent, corridor, c_agents, occupied_nodes, l_agents,
+#     node_name_to_agent_dict, self.nodes, self.nodes_dict, self.img_np,
+#     curr_iteration=curr_iteration
+# )
+# if not succeeded:
+#     return False, []
+#
+# # assign new paths to the next_agent and other captured agents
+#
+# path_through_corridor = get_path_through_corridor(next_agent, corridor, cc_paths_dict)
+# next_agent.path = next_agent.path[:curr_iteration]
+# next_agent.path.extend(path_through_corridor)
+# for agent_name, alt_path in cc_paths_dict.items():
+#     o_agent = self.agents_dict[agent_name]
+#     o_agent.path = o_agent.path[:curr_iteration]
+#     o_agent.path.extend(alt_path)
+#     captured_agents.append(o_agent)
+#
+# return True, captured_agents

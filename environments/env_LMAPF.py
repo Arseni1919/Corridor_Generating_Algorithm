@@ -131,7 +131,6 @@ class SimEnvLMAPF:
                 agent.finished_goals.append(agent.next_goal_node)
                 self.assign_next_goal(agent)
 
-
     def _check_solvability(self):
         assert len(self.nodes) - len(self.start_nodes) >= self.corridor_size
 
@@ -155,11 +154,10 @@ class SimEnvLMAPF:
             if agent.prev_node.xy_name != agent.curr_node.xy_name:
                 agent.unique_moves.append(agent.curr_node)
         # checks
-        check_if_nei_pos(self.agents)
-        check_if_vc(self.agents)
-        check_if_ec(self.agents)
+        check_vc_ec_neic(self.agents)
+        # check_if_nei_pos(self.agents) check_if_vc(self.agents) check_if_ec(self.agents)
 
-    def _get_obs(self) -> Dict[str, Any]:
+    def _get_obs(self) -> dict:
         obs = {agent.name:
                    AgentTuple(**{
                        'num': agent.num,
