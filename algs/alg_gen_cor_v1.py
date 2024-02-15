@@ -29,14 +29,24 @@ def get_assign_agent_to_node_dict(tube: List[Node], t_agents: list, corridor: Li
     return assign_agent_to_node_dict
 
 
-def get_full_tube(free_node: Node, spanning_tree_dict: Dict[str, str], nodes_dict: Dict[str, Node]) -> List[Node]:
+def get_full_tube(
+        free_node: Node,
+        spanning_tree_dict: Dict[str, str],
+        nodes_dict: Dict[str, Node],
+        flex_agents_nodes: List[Node]
+) -> List[Node]:
     tube: List[Node] = [free_node]
+    tube_pattern = [1]
     parent = spanning_tree_dict[free_node.xy_name]
     while parent is not None:
         parent_node = nodes_dict[parent]
         tube.append(parent_node)
+        if parent_node in flex_agents_nodes:
+            tube_pattern.append(0)
+        else:
+            tube_pattern.append(1)
         parent = spanning_tree_dict[parent]
-    return tube
+    return tube, tube_pattern
 
 
 def tube_is_free_to_go(tube: List[Node], inner_captured_nodes: list, next_agent: Any) -> bool:

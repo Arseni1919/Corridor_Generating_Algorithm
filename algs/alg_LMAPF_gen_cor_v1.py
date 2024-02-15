@@ -178,7 +178,7 @@ class ALgLMAPFGenCor:
             - check
         :return:
         """
-
+        print(f'\n[{self.next_iteration}] _calc_next_steps')
         # get all agents that already have plans for the future
         assert self.next_iteration != 0
         all_captured_agents: List[AlgAgentLMAPF] = []  # only for debug
@@ -212,14 +212,14 @@ class ALgLMAPFGenCor:
 
             # if you succeeded, add yourself and those agents, that you affected, to the list of already created paths
             if planned:
+                agent.captured_agents = captured_agents
                 assert agent.curr_node == agent.path[self.next_iteration - 1]
                 assert len(agent.path[self.next_iteration:]) > 0
                 assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
                 for cap_agent in captured_agents:
                     assert cap_agent.curr_node == cap_agent.path[self.next_iteration - 1]
                     assert len(cap_agent.path[self.next_iteration:]) > 0
-                    assert cap_agent.path[self.next_iteration].xy_name in cap_agent.path[
-                        self.next_iteration - 1].neighbours
+                    assert cap_agent.path[self.next_iteration].xy_name in cap_agent.path[self.next_iteration - 1].neighbours
                 assert agent not in captured_agents
 
                 planned_agents.append(agent)
@@ -301,15 +301,18 @@ class ALgLMAPFGenCor:
         :param flex_agents:
         :return: planned, captured_agents
         """
-
+        print(f'\r[{agent.name}] _plan_for_agent', end='')
+        assert agent not in planned_agents
+        assert self.img_np[agent.curr_node.x, agent.curr_node.y] == 1
         # create a relevant map where the planned agents are considered as walls
         new_map: np.ndarray = create_new_map(self.img_np, planned_agents, self.next_iteration)
-        fig, ax = plt.subplots(1, 2, figsize=(14, 7))
-        agents_to_plot = [a for a in flex_agents]
-        agents_to_plot.append(agent)
-        plot_info = {'img_np': new_map, 'agents': agents_to_plot}
-        plot_step_in_env(ax[0], plot_info)
-        plt.show()
+        # fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+        # agents_to_plot = [a for a in flex_agents]
+        # agents_to_plot.append(agent)
+        # plot_info = {'img_np': new_map, 'agents': agents_to_plot}
+        # plot_step_in_env(ax[0], plot_info)
+        # plt.show()
+        assert new_map[agent.curr_node.x, agent.curr_node.y] == 1
 
         # create a corridor to agent's goal in the given map to the max length straight through descending h-values
         corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_func, self.corridor_size, new_map)
@@ -330,7 +333,7 @@ class ALgLMAPFGenCor:
 
         # if there are no agents inside the corridor, then update agent's path and return True with []
         if len(c_agents) == 0:
-            agent.path.append(corridor[1:])
+            agent.path.extend(corridor[1:])
             return True, []
 
         # if you are here that means there are other agents inside the corridor (lets call them c_agents)
@@ -366,18 +369,27 @@ class ALgLMAPFGenCor:
         # let's define captured_agents to be the list of all agents that we will move in addition to the main agent
         captured_agents: List[AlgAgentLMAPF] = []
 
+        for c_agent in c_agents:
+            assert c_agent in flex_agents
+
         # NOW THE AGENTS WILL PLAN FUTURE STEPS
         for tube in tubes:
             # let's call all agents in the tube as t_agents
-            t_agents = find_t_agents(tube, flex_agents)
+            t_agents: List[AlgAgentLMAPF] = find_t_agents(tube, flex_agents)
             # move all t_agents forward such that the free node will be occupied, the last node will be free,
             # and the rest of the nodes inside a tube will remain state the same state
-            tube.move(t_agents)
-            captured_agents.extend(t_agents)
+            tube.move(t_agents, self.next_iteration)
+            for t_agent in t_agents:
+                if t_agent not in captured_agents:
+                    captured_agents.append(t_agent)
 
         # finally, let's move the main agent through the corridor
-        move_main_agent(agent, corridor, captured_agents)
+        move_main_agent(agent, corridor, captured_agents, self.next_iteration)
 
+        # agent_to_check = planned_agents[:]
+        # agent_to_check.extend(captured_agents)
+        # agent_to_check.append(agent)
+        # check_vc_ec_neic_iter(agent_to_check, self.next_iteration)
         return True, captured_agents
 
         # ----------------------------- #
@@ -390,8 +402,8 @@ def main():
     # set_seed(random_seed_bool=True)
     # N = 70
     # N = 100
-    N = 300
-    # N = 400
+    # N = 300
+    N = 400
     # N = 500
     # N = 600
     # N = 620
@@ -404,7 +416,8 @@ def main():
     img_dir = 'random-32-32-20.map'
     # img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
-    max_time = 20
+    # max_time = 20
+    max_time = 100
     corridor_size = 5
 
     # to_render: bool = True

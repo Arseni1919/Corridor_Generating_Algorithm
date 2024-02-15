@@ -120,7 +120,7 @@ def check_if_ec_iter(agents, iteration):
 def check_vc_ec_neic_iter(agents, iteration):
     for a1, a2 in combinations(agents, 2):
         # vertex conf
-        assert a1.path[iteration] != a2.path[iteration], f'vertex conf: {a1.name}-{a2.name} in {a1.curr_node.xy_name}'
+        assert a1.path[iteration] != a2.path[iteration], f'[i: {iteration}] vertex conf: {a1.name}-{a2.name} in {a1.path[iteration]}'
         # edge conf
         prev_node1 = a1.path[iteration - 1]
         curr_node1 = a1.path[iteration]
@@ -128,10 +128,10 @@ def check_vc_ec_neic_iter(agents, iteration):
         curr_node2 = a2.path[iteration]
         edge1 = (prev_node1.x, prev_node1.y, curr_node1.x, curr_node1.y)
         edge2 = (curr_node2.x, curr_node2.y, prev_node2.x, prev_node2.y)
-        assert edge1 != edge2, f'edge collision: {a1.name}-{a2.name} in {edge1}'
+        assert edge1 != edge2, f'[i: {iteration}] edge collision: {a1.name}-{a2.name} in {edge1}'
         # nei conf
-        assert a1.path[iteration].xy_name in a1.path[iteration - 1].neighbours, 'wow wow wow! Not nei pos!'
-    assert agents[-1].path[iteration].xy_name in agents[-1].path[iteration - 1].neighbours, 'wow wow wow! Not nei pos!'
+        assert a1.path[iteration].xy_name in a1.path[iteration - 1].neighbours, f'[i: {iteration}] wow wow wow! Not nei pos!'
+    assert agents[-1].path[iteration].xy_name in agents[-1].path[iteration - 1].neighbours, f'[i: {iteration}] wow wow wow! Not nei pos!'
 
 
 def plan_has_no_conf_with_vertex(plan, vertex):

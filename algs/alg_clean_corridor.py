@@ -10,31 +10,142 @@ from alg_gen_cor_v1 import get_full_tube, get_assign_agent_to_node_dict
 
 
 class Tube:
-    def __init__(self, nodes: List[Node], free_node: Node):
+    def __init__(self, nodes: List[Node], free_node: Node, tube_pattern: List[int]):
         self.nodes: List[Node] = nodes
         self.free_node: Node = free_node
+        self.tube_pattern = tube_pattern
         assert free_node == nodes[0]
-
-    def move(self, t_agents: list) -> None:
-        pass
 
     def __len__(self):
         return len(self.nodes)
 
+    def __contains__(self, item):
+        return item in self.nodes
+
+    def get_to_nodes(self, from_nodes: List[Node]) -> List[Node]:
+        # to_pattern = self.tube_pattern[:]
+        # to_pattern[0] = 0
+        # to_pattern[-1] = 1
+        # to_nodes = []
+        # for n, pat in zip(self.nodes, to_pattern):
+        #     if pat == 0:
+        #         to_nodes.append(n)
+        #     if len(to_nodes) == len(from_nodes):
+        #         break
+        to_nodes = [self.free_node]
+        to_nodes.extend(from_nodes[:-1])
+        return to_nodes
+
+    def move(self, t_agents: list, next_iteration: int) -> None:
+        """
+        move all t_agents forward such that the free node will be occupied, the last node will be free,
+        and the rest of the nodes inside a tube will remain state the same state
+        v- find start locations of t_agents
+        v- all t_agents wait until the last of them will arrive to its start locations from movements of other tubes
+        v- assign to each t_agent its final location
+        - move all agents along the tube until they reach their final locations
+        :param t_agents:
+        :param next_iteration:
+        :return: None
+        """
+        agent_to_final_node_dict = {}
+        if len(t_agents) > 0:
+
+            # find start locations of t_agents
+            from_nodes = [t_agent.path[-1] for t_agent in t_agents]
+            check_pattern = []
+            for n in self.nodes:
+                if n in from_nodes:
+                    check_pattern.append(0)
+                else:
+                    check_pattern.append(1)
+            from_times = [len(t_agent.path[next_iteration:]) for t_agent in t_agents]
+            max_time = max(from_times)
+
+            # all t_agents wait until the last of them will arrive to its start locations from movements of other tubes
+            for t_agent in t_agents:
+                while len(t_agent.path[next_iteration:]) <= max_time:
+                    t_agent.path.append(t_agent.path[-1])
+
+            to_nodes = self.get_to_nodes(from_nodes)
+            # assign to each t_agent its final location
+            assert self.free_node not in from_nodes  # the free node is supposed to be without agent in it
+            # assert self.nodes[-1] in from_nodes
+            # assert self.nodes[-1] == from_nodes[-1]
+
+
+            agent_to_final_node_dict: Dict[str, Node] = {}
+            for to_node, t_agent in zip(to_nodes, t_agents):
+                agent_to_final_node_dict[t_agent.name] = to_node
+            assert len(agent_to_final_node_dict) == len(from_nodes)
+
+        # move all agents along the tube until they reach their final locations
+        there_is_movement = True
+        while there_is_movement:
+            there_is_movement = False
+            step_dict = {t_agent.path[-1].xy_name: t_agent for t_agent in t_agents}
+            pairwise_tube: List[Tuple[Node, Node]] = pairwise_list(self.nodes)
+            for to_t_node, from_t_node in pairwise_tube:
+                if from_t_node.xy_name in step_dict:
+                    curr_agent = step_dict[from_t_node.xy_name]
+                    if curr_agent.name in agent_to_final_node_dict and agent_to_final_node_dict[curr_agent.name] == from_t_node:
+                        # curr_agent.path.append(from_t_node)
+                        continue
+                    elif to_t_node.xy_name in step_dict:
+                        curr_agent.path.append(from_t_node)
+                        # continue
+                    else:
+                        curr_agent.path.append(to_t_node)
+                        there_is_movement = True
+                        step_dict = {t_agent.path[-1].xy_name: t_agent for t_agent in t_agents}
+        for t_agent in t_agents:
+            assert t_agent.path[-1] == agent_to_final_node_dict[t_agent.name]
+
 
 def find_t_agents(tube: Tube, flex_agents: list) -> list:
     t_agents = []
+    node_name_to_agent_dict = {f_agent.path[-1].xy_name: f_agent for f_agent in flex_agents}
+    for n in tube.nodes:
+        if n.xy_name in node_name_to_agent_dict:
+            t_agents.append(node_name_to_agent_dict[n.xy_name])
     return t_agents
 
-def move_main_agent(agent, corridor: List[Node], captured_agents: list):
-    pass
+
+def move_main_agent(agent, corridor: List[Node], captured_agents: list, next_iteration: int) -> None:
+    """
+    - build the list minimum times per locations in the corridor
+    - proceed with the agent through the corridor while preserving the minimum times
+    :param agent:
+    :param corridor:
+    :param captured_agents:
+    :param next_iteration:
+    :return: None
+    """
+    assert agent.path[-1] == agent.curr_node
+    assert agent.curr_node == corridor[0]
+    # build the list minimum times per locations in the corridor
+    min_times_dict = OrderedDict([(n.xy_name, 0) for n in corridor])
+    for cap_agent in captured_agents:
+        for i, i_node in enumerate(cap_agent.path[next_iteration - 1:]):
+            if i_node.xy_name in min_times_dict:
+                min_times_dict[i_node.xy_name] = max(i, min_times_dict[i_node.xy_name])
+
+    # proceed with the agent through the corridor while preserving the minimum times
+    pairwise_tube: List[Tuple[Node, Node]] = pairwise_list(corridor)
+    path = [agent.curr_node]
+    for from_t_node, to_t_node in pairwise_tube:
+        min_time = min_times_dict[to_t_node.xy_name]
+        while len(path) <= min_time:
+            path.append(from_t_node)
+        path.append(to_t_node)
+    agent.path.extend(path[1:])
 
 
 def create_new_map(img_np: np.ndarray, planned_agents: list, next_iteration: int) -> np.ndarray:
     # 1 - free space, 0 - occupied space
     new_map = np.copy(img_np)
-    for agent in planned_agents:
-        path: List[Node] = agent.path[next_iteration-1:]
+    for p_agent in planned_agents:
+        path: List[Node] = p_agent.path[next_iteration-1:]
         assert len(path) > 1
         for n in path:
             new_map[n.x, n.y] = 0
@@ -52,7 +163,7 @@ def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_func, corridor_si
         min_node_name = min(node_name_to_h_value_dict, key=node_name_to_h_value_dict.get)
         min_node = nodes_dict[min_node_name]
         # 1 - free space, 0 - occupied space
-        if not new_map[min_node.x, min_node.y]:
+        if new_map[min_node.x, min_node.y] == 0:
             return corridor
         corridor.append(min_node)
     return corridor
@@ -111,8 +222,8 @@ def get_tube(
 
         selected_node = open_list.pop()
         if selected_node not in corridor_for_c_agents and selected_node not in flex_agents_nodes and selected_node not in captured_free_nodes:
-            nodes = get_full_tube(selected_node, spanning_tree_dict, nodes_dict)
-            tube = Tube(nodes, selected_node)
+            nodes, tube_pattern = get_full_tube(selected_node, spanning_tree_dict, nodes_dict, flex_agents_nodes)
+            tube = Tube(nodes, selected_node, tube_pattern)
             return True, tube
 
         corridor_nodes: List[Node] = []
