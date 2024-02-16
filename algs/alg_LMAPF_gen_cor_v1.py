@@ -90,9 +90,10 @@ class AlgAgentLMAPF:
 
 
 class ALgLMAPFGenCor:
-    def __init__(self, env: SimEnvLMAPF, **kwargs):
+    def __init__(self, env: SimEnvLMAPF, to_check_paths: bool, **kwargs):
 
         self.env = env
+        self.to_check_paths: bool = to_check_paths
         # for the map
         self.img_dir = self.env.img_dir
         self.nodes, self.nodes_dict = copy_nodes(self.env.nodes)
@@ -197,6 +198,7 @@ class ALgLMAPFGenCor:
             p_counter += 1
             # agents that are flexible for the current agent
             flex_agents: List[AlgAgentLMAPF] = [a for a in self.agents if a not in planned_agents and a != agent]
+
             assert agent not in flex_agents
             assert agent not in planned_agents
             for p_agent in planned_agents:
@@ -242,10 +244,11 @@ class ALgLMAPFGenCor:
             # then stay at place for the next move
             if len(agent.path[self.next_iteration:]) == 0:
                 agent.path.append(agent.path[-1])
+                assert agent not in planned_agents
+                planned_agents.append(agent)
                 assert agent.path[-2] == agent.curr_node
                 assert agent.path[-1] == agent.curr_node
                 assert agent not in all_captured_agents
-                assert agent not in planned_agents
             assert agent.curr_node == agent.path[self.next_iteration - 1]
             assert len(agent.path[self.next_iteration:]) > 0
             assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
@@ -325,7 +328,7 @@ class ALgLMAPFGenCor:
 
         # if you are here that means the corridor is of the length of 2 or higher
         assert len(corridor) >= 2
-        assert corridor[0] == agent.curr_node
+        assert corridor[0] == agent.curr_node  # the first node is agent's current location
         for n in corridor:
             assert new_map[n.x, n.y]
 
@@ -335,6 +338,13 @@ class ALgLMAPFGenCor:
         # if there are no agents inside the corridor, then update agent's path and return True with []
         if len(c_agents) == 0:
             agent.path.extend(corridor[1:])
+
+            # CHECK FULL PATHS FORWARD
+            if self.to_check_paths:
+                agents_to_check = planned_agents[:]
+                agents_to_check.append(agent)
+                check_paths(agents_to_check, self.next_iteration)
+
             return True, []
 
         # if you are here that means there are other agents inside the corridor (lets call them c_agents)
@@ -379,13 +389,49 @@ class ALgLMAPFGenCor:
             t_agents: List[AlgAgentLMAPF] = find_t_agents(tube, flex_agents)
             # move all t_agents forward such that the free node will be occupied, the last node will be free,
             # and the rest of the nodes inside a tube will remain state the same state
-            tube.move(t_agents, self.next_iteration)
+            tube.move(t_agents, self.next_iteration, captured_agents)
+
+            # CHECK FULL PATHS FORWARD
+            if self.to_check_paths:
+                check_paths(t_agents, self.next_iteration)
+                agents_to_check = t_agents[:]
+                agents_to_check.append(agent)
+                check_paths(t_agents, self.next_iteration)
+
             for t_agent in t_agents:
                 if t_agent not in captured_agents:
                     captured_agents.append(t_agent)
 
+            if self.to_check_paths:
+                check_paths(captured_agents, self.next_iteration)
+
+
         # finally, let's move the main agent through the corridor
         move_main_agent(agent, corridor, captured_agents, self.next_iteration)
+
+        # CHECK FULL PATHS FORWARD planned, captured, agent
+        if self.to_check_paths:
+            # only planned
+            check_paths(planned_agents, self.next_iteration)
+            # only captured
+            check_paths(captured_agents, self.next_iteration)
+            # captured + agent
+            agents_to_check = captured_agents[:]
+            agents_to_check.append(agent)
+            check_paths(agents_to_check, self.next_iteration)
+            # captured + planned
+            agents_to_check = planned_agents[:]
+            agents_to_check.extend(captured_agents)
+            check_paths(agents_to_check, self.next_iteration)
+            # panned + agent
+            agents_to_check = planned_agents[:]
+            agents_to_check.append(agent)
+            check_paths(agents_to_check, self.next_iteration)
+            # all
+            # agents_to_check = planned_agents[:]
+            # agents_to_check.extend(captured_agents)
+            # agents_to_check.append(agent)
+            # check_paths(agents_to_check, self.next_iteration)
 
         # agent_to_check = planned_agents[:]
         # agent_to_check.extend(captured_agents)
@@ -396,16 +442,15 @@ class ALgLMAPFGenCor:
         # ----------------------------- #
 
 
-
 @use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
 def main():
-    set_seed(random_seed_bool=False, seed=218)
+    set_seed(random_seed_bool=False, seed=601)
     # set_seed(random_seed_bool=True)
     # N = 70
-    N = 100
+    # N = 100
     # N = 300
     # N = 400
-    # N = 500
+    N = 500
     # N = 600
     # N = 620
     # N = 700
@@ -414,15 +459,19 @@ def main():
     # N = 2000
     # img_dir = '10_10_my_rand.map'
     # img_dir = 'empty-32-32.map'
-    # img_dir = 'random-32-32-20.map'
-    img_dir = 'maze-32-32-2.map'
+    img_dir = 'random-32-32-20.map'
+    # img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
-    # max_time = 20
-    max_time = 100
-    corridor_size = 10
+    max_time = 20
+    # max_time = 100
+    # corridor_size = 10
+    corridor_size = 3
 
-    to_render: bool = True
-    # to_render: bool = False
+    # to_render: bool = True
+    to_render: bool = False
+
+    # to_check_paths: bool = True
+    to_check_paths: bool = False
 
     # problem creation
     env = SimEnvLMAPF(img_dir=img_dir)
@@ -438,7 +487,7 @@ def main():
     # the run
     obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], max_time=max_time, corridor_size=corridor_size)
     # alg creation + init
-    alg = ALgLMAPFGenCor(env=env)
+    alg = ALgLMAPFGenCor(env=env, to_check_paths=to_check_paths)
     alg.initiate_problem(obs=obs)
 
     for i_step in range(max_time):

@@ -22,21 +22,52 @@ class Tube:
     def __contains__(self, item):
         return item in self.nodes
 
-    def get_to_nodes(self, from_nodes: List[Node]) -> List[Node]:
-        # to_pattern = self.tube_pattern[:]
-        # to_pattern[0] = 0
-        # to_pattern[-1] = 1
-        # to_nodes = []
-        # for n, pat in zip(self.nodes, to_pattern):
-        #     if pat == 0:
-        #         to_nodes.append(n)
-        #     if len(to_nodes) == len(from_nodes):
-        #         break
-        to_nodes = [self.free_node]
-        to_nodes.extend(from_nodes[:-1])
+    @property
+    def node_names(self):
+        return [n.xy_name for n in self.nodes]
+
+    @property
+    def creator_name(self):
+        return self.free_node.xy_name
+
+    def get_from_pattern(self, from_nodes: List[Node]) -> List[int]:
+        from_pattern = []
+        for n in self.nodes:
+            if n in from_nodes:
+                from_pattern.append(0)
+            else:
+                from_pattern.append(1)
+        return from_pattern
+
+    def get_to_nodes(self, from_nodes: List[Node], from_pattern: List[int]) -> List[Node]:
+        assert from_pattern[0] == 1
+        to_pattern = from_pattern[:]
+        to_pattern[0] = 0
+        to_pattern[-1] = 1
+        to_nodes = []
+        for n, pat in zip(self.nodes, to_pattern):
+            if pat == 0:
+                to_nodes.append(n)
+            if len(to_nodes) == len(from_nodes):
+                break
+        # to_nodes = [self.free_node]
+        # to_nodes.extend(from_nodes[:-1])
         return to_nodes
 
-    def move(self, t_agents: list, next_iteration: int) -> None:
+    def get_max_time(self, next_iteration: int, captured_agents: list) -> int:
+        freedom_times = {n.xy_name: 0 for n in self.nodes}
+        for cap_agent in captured_agents:
+            for i, node in enumerate(cap_agent.path[next_iteration - 1:]):
+                if node.xy_name in freedom_times:
+                    curr_v = freedom_times[node.xy_name]
+                    freedom_times[node.xy_name] = max(curr_v, i)
+        freedom_times_v = list(freedom_times.values())
+        max_time = max(freedom_times_v)
+        # from_times = [len(t_agent.path[next_iteration:]) for t_agent in t_agents]
+        # max_time = max(from_times)
+        return max_time
+
+    def move(self, t_agents: list, next_iteration: int, captured_agents: list) -> None:
         """
         move all t_agents forward such that the free node will be occupied, the last node will be free,
         and the rest of the nodes inside a tube will remain state the same state
@@ -46,6 +77,7 @@ class Tube:
         - move all agents along the tube until they reach their final locations
         :param t_agents:
         :param next_iteration:
+        :param captured_agents:
         :return: None
         """
         agent_to_final_node_dict = {}
@@ -53,26 +85,20 @@ class Tube:
 
             # find start locations of t_agents
             from_nodes = [t_agent.path[-1] for t_agent in t_agents]
-            check_pattern = []
-            for n in self.nodes:
-                if n in from_nodes:
-                    check_pattern.append(0)
-                else:
-                    check_pattern.append(1)
-            from_times = [len(t_agent.path[next_iteration:]) for t_agent in t_agents]
-            max_time = max(from_times)
+            from_pattern = self.get_from_pattern(from_nodes)
 
             # all t_agents wait until the last of them will arrive to its start locations from movements of other tubes
+            max_time = self.get_max_time(next_iteration, captured_agents)
             for t_agent in t_agents:
-                while len(t_agent.path[next_iteration:]) <= max_time:
+                while len(t_agent.path[next_iteration:]) < max_time:
                     t_agent.path.append(t_agent.path[-1])
-
-            to_nodes = self.get_to_nodes(from_nodes)
+            for t_agent in t_agents:
+                assert len(t_agent.path[next_iteration:]) == max_time
+            to_nodes = self.get_to_nodes(from_nodes, from_pattern)
             # assign to each t_agent its final location
             assert self.free_node not in from_nodes  # the free node is supposed to be without agent in it
             # assert self.nodes[-1] in from_nodes
             # assert self.nodes[-1] == from_nodes[-1]
-
 
             agent_to_final_node_dict: Dict[str, Node] = {}
             for to_node, t_agent in zip(to_nodes, t_agents):
@@ -89,8 +115,8 @@ class Tube:
                 if from_t_node.xy_name in step_dict:
                     curr_agent = step_dict[from_t_node.xy_name]
                     if curr_agent.name in agent_to_final_node_dict and agent_to_final_node_dict[curr_agent.name] == from_t_node:
-                        # curr_agent.path.append(from_t_node)
-                        continue
+                        curr_agent.path.append(from_t_node)
+                        # continue
                     elif to_t_node.xy_name in step_dict:
                         curr_agent.path.append(from_t_node)
                         # continue

@@ -117,10 +117,10 @@ def check_if_ec_iter(agents, iteration):
             raise RuntimeError(f'edge collision: {agent1.name} and {agent2.name} in {edge1}')
 
 
-def check_vc_ec_neic_iter(agents, iteration):
+def check_vc_ec_neic_iter(agents: list, iteration: int) -> None:
     for a1, a2 in combinations(agents, 2):
         # vertex conf
-        assert a1.path[iteration] != a2.path[iteration], f'[i: {iteration}] vertex conf: {a1.name}-{a2.name} in {a1.path[iteration]}'
+        assert a1.path[iteration] != a2.path[iteration], f'[i: {iteration}] vertex conf: {a1.name}-{a2.name} in {a1.path[iteration].xy_name}'
         # edge conf
         prev_node1 = a1.path[iteration - 1]
         curr_node1 = a1.path[iteration]
@@ -132,6 +132,16 @@ def check_vc_ec_neic_iter(agents, iteration):
         # nei conf
         assert a1.path[iteration].xy_name in a1.path[iteration - 1].neighbours, f'[i: {iteration}] wow wow wow! Not nei pos!'
     assert agents[-1].path[iteration].xy_name in agents[-1].path[iteration - 1].neighbours, f'[i: {iteration}] wow wow wow! Not nei pos!'
+
+
+def check_paths(agents: list, from_iteration: int = 1) -> None:
+    if len(agents) == 0:
+        return
+    len_list = [len(agent.path) for agent in agents]
+    max_len = max(len_list)
+    for next_i in range(from_iteration, max_len):
+        agents_to_check = [a for a in agents if next_i < len(a.path)]
+        check_vc_ec_neic_iter(agents_to_check, next_i)
 
 
 def plan_has_no_conf_with_vertex(plan, vertex):

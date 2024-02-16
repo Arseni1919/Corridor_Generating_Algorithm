@@ -36,7 +36,10 @@
 
 test_list = [0, 1, 2, 3, 4,]
 
-print(len(test_list[5:]))
+print(5 < len(test_list))
+
+# for i in range(0, 10):
+#     print(i)
 
 
 
