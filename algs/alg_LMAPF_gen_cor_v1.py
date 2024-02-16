@@ -189,11 +189,12 @@ class ALgLMAPFGenCor:
                 assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
                 planned_agents.append(agent)
 
+        p_counter = 0
         for agent in self.global_order:
             # if there have future steps in the path -> continue
             if agent in planned_agents:
                 continue
-
+            p_counter += 1
             # agents that are flexible for the current agent
             flex_agents: List[AlgAgentLMAPF] = [a for a in self.agents if a not in planned_agents and a != agent]
             assert agent not in flex_agents
@@ -208,7 +209,7 @@ class ALgLMAPFGenCor:
 
             # if you here, that means you don't have any future moves
             # create your path while moving others out of your way (already created paths are walls for you)
-            planned, captured_agents = self._plan_for_agent(agent, planned_agents, flex_agents)
+            planned, captured_agents = self._plan_for_agent(agent, planned_agents, flex_agents, p_counter)
 
             # if you succeeded, add yourself and those agents, that you affected, to the list of already created paths
             if planned:
@@ -252,7 +253,7 @@ class ALgLMAPFGenCor:
         check_vc_ec_neic_iter(self.agents, self.next_iteration)
         # --------------------------- #
 
-    def _plan_for_agent(self, agent: AlgAgentLMAPF, planned_agents: List[AlgAgentLMAPF], flex_agents: List[AlgAgentLMAPF]) -> Tuple[bool, List[AlgAgentLMAPF]]:
+    def _plan_for_agent(self, agent: AlgAgentLMAPF, planned_agents: List[AlgAgentLMAPF], flex_agents: List[AlgAgentLMAPF], p_counter: int) -> Tuple[bool, List[AlgAgentLMAPF]]:
         """
         v- create a relevant map where the planned agents are considered as walls
         - check
@@ -301,7 +302,7 @@ class ALgLMAPFGenCor:
         :param flex_agents:
         :return: planned, captured_agents
         """
-        print(f'\r[{agent.name}] _plan_for_agent', end='')
+        print(f'\r[{p_counter}][{agent.name}] _plan_for_agent', end='')
         assert agent not in planned_agents
         assert self.img_np[agent.curr_node.x, agent.curr_node.y] == 1
         # create a relevant map where the planned agents are considered as walls
@@ -401,9 +402,9 @@ def main():
     set_seed(random_seed_bool=False, seed=218)
     # set_seed(random_seed_bool=True)
     # N = 70
-    # N = 100
+    N = 100
     # N = 300
-    N = 400
+    # N = 400
     # N = 500
     # N = 600
     # N = 620
@@ -413,15 +414,15 @@ def main():
     # N = 2000
     # img_dir = '10_10_my_rand.map'
     # img_dir = 'empty-32-32.map'
-    img_dir = 'random-32-32-20.map'
-    # img_dir = 'maze-32-32-2.map'
+    # img_dir = 'random-32-32-20.map'
+    img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
     # max_time = 20
     max_time = 100
-    corridor_size = 5
+    corridor_size = 10
 
-    # to_render: bool = True
-    to_render: bool = False
+    to_render: bool = True
+    # to_render: bool = False
 
     # problem creation
     env = SimEnvLMAPF(img_dir=img_dir)
@@ -448,7 +449,7 @@ def main():
         if to_render:
             total_unique_moves_list.append(metrics['total_unique_moves'])
             total_finished_goals_list.append(metrics['total_finished_goals'])
-            i_agent = alg.agents[49]
+            i_agent = alg.global_order[0]
             plot_info = {
                 'i': i_step, 'iterations': max_time, 'img_dir': img_dir, 'img_np': alg.img_np,
                 'n_agents': env.n_agents, 'agents': alg.agents,
