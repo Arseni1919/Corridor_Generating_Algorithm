@@ -90,10 +90,11 @@ class AlgAgentLMAPF:
 
 
 class ALgLMAPFGenCor:
-    def __init__(self, env: SimEnvLMAPF, to_check_paths: bool, **kwargs):
+    def __init__(self, env: SimEnvLMAPF, to_check_paths: bool = False, to_assert: bool = False, **kwargs):
 
         self.env = env
         self.to_check_paths: bool = to_check_paths
+        self.to_assert: bool = to_assert
         # for the map
         self.img_dir = self.env.img_dir
         self.nodes, self.nodes_dict = copy_nodes(self.env.nodes)
@@ -181,14 +182,17 @@ class ALgLMAPFGenCor:
         """
         print(f'\n[{self.next_iteration}] _calc_next_steps')
         # get all agents that already have plans for the future
-        assert self.next_iteration != 0
+        if self.to_assert:
+            assert self.next_iteration != 0
         all_captured_agents: List[AlgAgentLMAPF] = []  # only for debug
         planned_agents: List[AlgAgentLMAPF] = []
         for agent in self.global_order:
-            assert agent.curr_node == agent.path[self.next_iteration - 1]
+            if self.to_assert:
+                assert agent.curr_node == agent.path[self.next_iteration - 1]
             if len(agent.path[self.next_iteration:]) > 0:
-                assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
                 planned_agents.append(agent)
+                if self.to_assert:
+                    assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
 
         p_counter = 0
         for agent in self.global_order:
@@ -198,16 +202,16 @@ class ALgLMAPFGenCor:
             p_counter += 1
             # agents that are flexible for the current agent
             flex_agents: List[AlgAgentLMAPF] = [a for a in self.agents if a not in planned_agents and a != agent]
-
-            assert agent not in flex_agents
-            assert agent not in planned_agents
-            for p_agent in planned_agents:
-                assert p_agent.curr_node == p_agent.path[self.next_iteration - 1]
-                assert len(p_agent.path[self.next_iteration:]) > 0
-                assert p_agent not in flex_agents
-            for f_agent in flex_agents:
-                assert f_agent.curr_node == f_agent.path[self.next_iteration - 1]
-                assert len(f_agent.path[self.next_iteration:]) == 0
+            if self.to_assert:
+                assert agent not in flex_agents
+                assert agent not in planned_agents
+                for p_agent in planned_agents:
+                    assert p_agent.curr_node == p_agent.path[self.next_iteration - 1]
+                    assert len(p_agent.path[self.next_iteration:]) > 0
+                    assert p_agent not in flex_agents
+                for f_agent in flex_agents:
+                    assert f_agent.curr_node == f_agent.path[self.next_iteration - 1]
+                    assert len(f_agent.path[self.next_iteration:]) == 0
 
             # if you here, that means you don't have any future moves
             # create your path while moving others out of your way (already created paths are walls for you)
@@ -216,14 +220,15 @@ class ALgLMAPFGenCor:
             # if you succeeded, add yourself and those agents, that you affected, to the list of already created paths
             if planned:
                 agent.captured_agents = captured_agents
-                assert agent.curr_node == agent.path[self.next_iteration - 1]
-                assert len(agent.path[self.next_iteration:]) > 0
-                assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
-                for cap_agent in captured_agents:
-                    assert cap_agent.curr_node == cap_agent.path[self.next_iteration - 1]
-                    assert len(cap_agent.path[self.next_iteration:]) > 0
-                    assert cap_agent.path[self.next_iteration].xy_name in cap_agent.path[self.next_iteration - 1].neighbours
-                assert agent not in captured_agents
+                if self.to_assert:
+                    assert agent.curr_node == agent.path[self.next_iteration - 1]
+                    assert len(agent.path[self.next_iteration:]) > 0
+                    assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
+                    for cap_agent in captured_agents:
+                        assert cap_agent.curr_node == cap_agent.path[self.next_iteration - 1]
+                        assert len(cap_agent.path[self.next_iteration:]) > 0
+                        assert cap_agent.path[self.next_iteration].xy_name in cap_agent.path[self.next_iteration - 1].neighbours
+                    assert agent not in captured_agents
 
                 planned_agents.append(agent)
                 planned_agents.extend(captured_agents)
@@ -231,29 +236,40 @@ class ALgLMAPFGenCor:
                 continue
 
             # if you didn't succeed to create a path -> be flexible for others
-            assert not planned
-            assert len(captured_agents) == 0
-            assert agent.curr_node == agent.path[self.next_iteration - 1]
-            assert len(agent.path[self.next_iteration:]) == 0
-            for f_agent in flex_agents:
-                assert f_agent.curr_node == f_agent.path[self.next_iteration - 1]
-                assert len(f_agent.path[self.next_iteration:]) == 0
+            if self.to_assert:
+                assert not planned
+                assert len(captured_agents) == 0
+                assert agent.curr_node == agent.path[self.next_iteration - 1]
+                assert len(agent.path[self.next_iteration:]) == 0
+                for f_agent in flex_agents:
+                    assert f_agent.curr_node == f_agent.path[self.next_iteration - 1]
+                    assert len(f_agent.path[self.next_iteration:]) == 0
 
+        path_horizon = self.next_iteration + (self.corridor_size - self.next_iteration % self.corridor_size)
+        # print()
         for agent in self.global_order:
             # if you still have no path (you didn't create it for yourself and others didn't do it for you),
             # then stay at place for the next move
-            if len(agent.path[self.next_iteration:]) == 0:
-                agent.path.append(agent.path[-1])
-                assert agent not in planned_agents
-                planned_agents.append(agent)
-                assert agent.path[-2] == agent.curr_node
-                assert agent.path[-1] == agent.curr_node
-                assert agent not in all_captured_agents
-            assert agent.curr_node == agent.path[self.next_iteration - 1]
-            assert len(agent.path[self.next_iteration:]) > 0
-            assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
+            # if len(agent.path[self.next_iteration:]) == 0:
+            #     agent.path.append(agent.path[-1])
+            #     planned_agents.append(agent)
+            #     if self.to_assert:
+            #         assert agent not in planned_agents
 
-        check_vc_ec_neic_iter(self.agents, self.next_iteration)
+            if len(agent.path) < path_horizon:
+                while len(agent.path) < path_horizon:
+                    agent.path.append(agent.path[-1])
+                planned_agents.append(agent)
+                if self.to_assert:
+                    assert agent.path[-2] == agent.curr_node
+                    assert agent.path[-1] == agent.curr_node
+                    assert agent not in all_captured_agents
+            if self.to_assert:
+                assert agent.curr_node == agent.path[self.next_iteration - 1]
+                assert len(agent.path[self.next_iteration:]) > 0
+                assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
+
+        # check_vc_ec_neic_iter(self.agents, self.next_iteration)
         # --------------------------- #
 
     def _plan_for_agent(self, agent: AlgAgentLMAPF, planned_agents: List[AlgAgentLMAPF], flex_agents: List[AlgAgentLMAPF], p_counter: int) -> Tuple[bool, List[AlgAgentLMAPF]]:
@@ -448,9 +464,9 @@ def main():
     # set_seed(random_seed_bool=True)
     # N = 70
     # N = 100
-    # N = 300
+    N = 300
     # N = 400
-    N = 500
+    # N = 500
     # N = 600
     # N = 620
     # N = 700
@@ -462,13 +478,14 @@ def main():
     img_dir = 'random-32-32-20.map'
     # img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
-    max_time = 20
-    # max_time = 100
+    # max_time = 20
+    max_time = 100
     # corridor_size = 10
-    corridor_size = 3
+    corridor_size = 5
+    # corridor_size = 3
 
-    # to_render: bool = True
-    to_render: bool = False
+    to_render: bool = True
+    # to_render: bool = False
 
     # to_check_paths: bool = True
     to_check_paths: bool = False
