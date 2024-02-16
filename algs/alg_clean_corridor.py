@@ -74,7 +74,7 @@ class Tube:
         v- find start locations of t_agents
         v- all t_agents wait until the last of them will arrive to its start locations from movements of other tubes
         v- assign to each t_agent its final location
-        - move all agents along the tube until they reach their final locations
+        v- move all agents along the tube until they reach their final locations
         :param t_agents:
         :param next_iteration:
         :param captured_agents:
@@ -115,8 +115,8 @@ class Tube:
                 if from_t_node.xy_name in step_dict:
                     curr_agent = step_dict[from_t_node.xy_name]
                     if curr_agent.name in agent_to_final_node_dict and agent_to_final_node_dict[curr_agent.name] == from_t_node:
-                        curr_agent.path.append(from_t_node)
-                        # continue
+                        # curr_agent.path.append(from_t_node)
+                        continue
                     elif to_t_node.xy_name in step_dict:
                         curr_agent.path.append(from_t_node)
                         # continue
@@ -180,7 +180,7 @@ def create_new_map(img_np: np.ndarray, planned_agents: list, next_iteration: int
 
 def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_func, corridor_size: int, new_map: np.ndarray) -> List[Node] | None:
     corridor: List[Node] = [agent.curr_node]
-    for i in range(corridor_size - 1):
+    for i in range(corridor_size):
         next_node = corridor[-1]
         node_name_to_h_value_dict = {
             node_name: h_func(agent.next_goal_node, nodes_dict[node_name])

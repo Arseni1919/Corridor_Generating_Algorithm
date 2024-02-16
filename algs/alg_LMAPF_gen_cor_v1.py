@@ -1,3 +1,5 @@
+import random
+
 import matplotlib.pyplot as plt
 from collections import deque
 
@@ -184,7 +186,7 @@ class ALgLMAPFGenCor:
         # get all agents that already have plans for the future
         if self.to_assert:
             assert self.next_iteration != 0
-        all_captured_agents: List[AlgAgentLMAPF] = []  # only for debug
+        all_captured_agents: List[AlgAgentLMAPF] = []
         planned_agents: List[AlgAgentLMAPF] = []
         for agent in self.global_order:
             if self.to_assert:
@@ -232,7 +234,7 @@ class ALgLMAPFGenCor:
 
                 planned_agents.append(agent)
                 planned_agents.extend(captured_agents)
-                all_captured_agents.extend(captured_agents)  # only for debug
+                all_captured_agents.extend(captured_agents)
                 continue
 
             # if you didn't succeed to create a path -> be flexible for others
@@ -250,12 +252,13 @@ class ALgLMAPFGenCor:
         for agent in self.global_order:
             # if you still have no path (you didn't create it for yourself and others didn't do it for you),
             # then stay at place for the next move
-            # if len(agent.path[self.next_iteration:]) == 0:
-            #     agent.path.append(agent.path[-1])
-            #     planned_agents.append(agent)
-            #     if self.to_assert:
-            #         assert agent not in planned_agents
-
+            if agent in planned_agents:
+                continue
+            if agent in all_captured_agents:
+                continue
+            if len(agent.path[self.next_iteration:]) == 0:
+                agent.path.append(agent.path[-1])
+                continue
             if len(agent.path) < path_horizon:
                 while len(agent.path) < path_horizon:
                     agent.path.append(agent.path[-1])
@@ -268,6 +271,18 @@ class ALgLMAPFGenCor:
                 assert agent.curr_node == agent.path[self.next_iteration - 1]
                 assert len(agent.path[self.next_iteration:]) > 0
                 assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
+
+        # shuffle the lost ones
+        # yes_fine = []
+        # no_fine = []
+        # for agent in self.global_order:
+        #     if agent in planned_agents:
+        #         yes_fine.append(agent)
+        #     else:
+        #         no_fine.append(agent)
+        # random.shuffle(no_fine)
+        # self.global_order = no_fine
+        # self.global_order.extend(yes_fine)
 
         # check_vc_ec_neic_iter(self.agents, self.next_iteration)
         # --------------------------- #
@@ -460,12 +475,13 @@ class ALgLMAPFGenCor:
 
 @use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
 def main():
-    set_seed(random_seed_bool=False, seed=601)
-    # set_seed(random_seed_bool=True)
+    # set_seed(random_seed_bool=False, seed=601)
+    set_seed(random_seed_bool=True)
     # N = 70
     # N = 100
-    N = 300
-    # N = 400
+    # N = 150
+    # N = 300
+    N = 400
     # N = 500
     # N = 600
     # N = 620
@@ -475,7 +491,8 @@ def main():
     # N = 2000
     # img_dir = '10_10_my_rand.map'
     # img_dir = 'empty-32-32.map'
-    img_dir = 'random-32-32-20.map'
+    # img_dir = 'random-32-32-20.map'
+    img_dir = 'room-32-32-4.map'
     # img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
     # max_time = 20
@@ -484,8 +501,8 @@ def main():
     corridor_size = 5
     # corridor_size = 3
 
-    to_render: bool = True
-    # to_render: bool = False
+    # to_render: bool = True
+    to_render: bool = False
 
     # to_check_paths: bool = True
     to_check_paths: bool = False
@@ -496,10 +513,10 @@ def main():
     plot_rate = 0.5
 
     # for rendering
+    total_unique_moves_list = []
+    total_finished_goals_list = []
     if to_render:
         fig, ax = plt.subplots(1, 2, figsize=(14, 7))
-        total_unique_moves_list = []
-        total_finished_goals_list = []
 
     # the run
     obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], max_time=max_time, corridor_size=corridor_size)
@@ -512,10 +529,10 @@ def main():
         obs, metrics, terminated, info = env.step(actions)
 
         # update metrics + render
+        total_unique_moves_list.append(metrics['total_unique_moves'])
+        total_finished_goals_list.append(metrics['total_finished_goals'])
         if to_render:
-            total_unique_moves_list.append(metrics['total_unique_moves'])
-            total_finished_goals_list.append(metrics['total_finished_goals'])
-            i_agent = alg.global_order[0]
+            i_agent = alg.agents[0]
             plot_info = {
                 'i': i_step, 'iterations': max_time, 'img_dir': img_dir, 'img_np': alg.img_np,
                 'n_agents': env.n_agents, 'agents': alg.agents,
@@ -532,19 +549,20 @@ def main():
         if terminated:
             break
 
-    if to_render:
-        total_unique_moves_list.append(metrics['total_unique_moves'])
-        total_finished_goals_list.append(metrics['total_finished_goals'])
-        plot_info = {
-            'i': i_step, 'iterations': max_time, 'img_dir': img_dir, 'img_np': env.img_np,
-            'n_agents': env.n_agents, 'agents': env.agents,
-            'total_unique_moves_list': total_unique_moves_list,
-            'total_finished_goals_list': total_finished_goals_list,
-        }
-        plot_step_in_env(ax[0], plot_info)
-        plot_total_finished_goals(ax[1], plot_info)
-        # plot_unique_movements(ax[1], plot_info)
-        plt.show()
+    # if to_render:
+    plt.show()
+    plt.close()
+    fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+    plot_info = {
+        'i': max_time, 'iterations': max_time, 'img_dir': img_dir, 'img_np': env.img_np,
+        'n_agents': env.n_agents, 'agents': env.agents,
+        'total_unique_moves_list': total_unique_moves_list,
+        'total_finished_goals_list': total_finished_goals_list,
+    }
+    plot_step_in_env(ax[0], plot_info)
+    plot_total_finished_goals(ax[1], plot_info)
+    # plot_unique_movements(ax[1], plot_info)
+    plt.show()
     print(f'finished run')
 
 
