@@ -256,9 +256,9 @@ class ALgLMAPFGenCor:
                 continue
             if agent in all_captured_agents:
                 continue
-            if len(agent.path[self.next_iteration:]) == 0:
-                agent.path.append(agent.path[-1])
-                continue
+            # if len(agent.path[self.next_iteration:]) == 0:
+            #     agent.path.append(agent.path[-1])
+            #     continue
             if len(agent.path) < path_horizon:
                 while len(agent.path) < path_horizon:
                     agent.path.append(agent.path[-1])
@@ -481,18 +481,18 @@ def main():
     # N = 100
     # N = 150
     # N = 300
-    N = 400
+    # N = 400
     # N = 500
     # N = 600
     # N = 620
-    # N = 700
+    N = 700
     # N = 750
     # N = 850
     # N = 2000
     # img_dir = '10_10_my_rand.map'
-    # img_dir = 'empty-32-32.map'
+    img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-20.map'
-    img_dir = 'room-32-32-4.map'
+    # img_dir = 'room-32-32-4.map'
     # img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
     # max_time = 20
