@@ -33,15 +33,15 @@ def get_full_tube(
         free_node: Node,
         spanning_tree_dict: Dict[str, str],
         nodes_dict: Dict[str, Node],
-        flex_agents_nodes: List[Node]
-) -> List[Node]:
+        node_name_to_f_agent_heap: List[str]
+) -> Tuple[List[Node], List[int]]:
     tube: List[Node] = [free_node]
     tube_pattern = [1]
     parent = spanning_tree_dict[free_node.xy_name]
     while parent is not None:
         parent_node = nodes_dict[parent]
         tube.append(parent_node)
-        if parent_node in flex_agents_nodes:
+        if parent_node.xy_name in node_name_to_f_agent_heap:
             tube_pattern.append(0)
         else:
             tube_pattern.append(1)

@@ -45,6 +45,14 @@ class Node:
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
+    def __lt__(self, other):
+        return self.xy_name < other.xy_name
+
+    def __gt__(self, other):
+        return self.xy_name > other.xy_name
+
+
+
     def reset(self, target_nodes: list | None = None, **kwargs):
         if 'start_time' in kwargs:
             self.t = kwargs['start_time']

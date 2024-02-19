@@ -3,7 +3,7 @@ import random
 import math
 import abc
 import copy
-from functools import lru_cache
+from functools import lru_cache, reduce
 from collections import OrderedDict
 import itertools
 from itertools import combinations, permutations, tee
@@ -21,7 +21,6 @@ import operator
 import concurrent.futures
 from pprint import pprint
 from typing import *
-
 import matplotlib.pyplot as plt
 import matplotlib
 # import plotly.graph_objects as go
@@ -36,7 +35,6 @@ from scipy.spatial.distance import cdist
 # from plotly.subplots import make_subplots
 # import plotly.graph_objects as go
 # import graphviz
-
 # import torch
 # import torchvision
 # import torchvision.transforms as T
