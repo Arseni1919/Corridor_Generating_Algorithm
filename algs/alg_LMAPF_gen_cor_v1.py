@@ -14,39 +14,6 @@ from alg_gen_cor_v1 import copy_nodes
 from alg_clean_corridor import *
 
 
-def build_perm_constr_list(curr_iteration: int, finished_agents: list, nodes: List[Node]) -> Tuple[Dict[str, List[Node]], List[Node]]:
-    perm_constr_dict = {node.xy_name: [] for node in nodes}
-    occupied_nodes: List[Node] = []
-    for agent in finished_agents:
-        a_path = agent.path[curr_iteration:]
-        for n in a_path:
-            perm_constr_dict[n.xy_name] = [0]
-            occupied_nodes.append(n)
-    return perm_constr_dict, occupied_nodes
-
-
-def build_occupied_nodes(curr_iteration: int, finished_agents: list) -> List[Node]:
-    occupied_nodes: List[Node] = []
-    for agent in finished_agents:
-        a_path = agent.path[curr_iteration:]
-        for n in a_path:
-            occupied_nodes.append(n)
-    return occupied_nodes
-
-
-def calc_corridor(next_agent, nodes, nodes_dict, h_func, corridor_size, perm_constr_dict: Dict[str, List[Node]]) -> \
-        List[Node] | None:
-    v_constr_dict = {node.xy_name: [] for node in nodes}
-    e_constr_dict = {node.xy_name: [] for node in nodes}
-    result, info = a_star_xyt(
-        start=next_agent.curr_node, goal=next_agent.next_goal_node, nodes=nodes, h_func=h_func,
-        v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict, perm_constr_dict=perm_constr_dict,
-        plotter=None, middle_plot=False, nodes_dict=nodes_dict,
-        xyt_problem=True, k_time=corridor_size,
-    )
-    return result
-
-
 class AlgAgentLMAPF:
 
     def __init__(self, num: int, start_node: Node, next_goal_node: Node):
@@ -101,6 +68,7 @@ class ALgLMAPFGenCor:
         self.img_dir = self.env.img_dir
         self.nodes, self.nodes_dict = copy_nodes(self.env.nodes)
         self.img_np = self.env.img_np
+        self.freedom_nodes_np = get_freedom_nodes_np(self.nodes, self.nodes_dict, self.img_np)
         self.map_dim = self.env.map_dim
         self.h_func = self.env.h_func
         self.h_dict = self.env.h_dict
@@ -484,15 +452,15 @@ class ALgLMAPFGenCor:
 
 @use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
 def main():
-    set_seed(random_seed_bool=False, seed=373)
-    # set_seed(random_seed_bool=True)
+    # set_seed(random_seed_bool=False, seed=373)
+    set_seed(random_seed_bool=True)
     # N = 70
     # N = 100
     # N = 150
     # N = 200
-    N = 250
+    # N = 250
     # N = 300
-    # N = 400
+    N = 400
     # N = 500
     # N = 600
     # N = 620

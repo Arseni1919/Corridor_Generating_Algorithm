@@ -187,54 +187,12 @@ def create_new_map(img_np: np.ndarray, planned_agents: list, next_iteration: int
     # 1 - free space, 0 - occupied space
     new_map = np.copy(img_np)
     for p_agent in planned_agents:
-        path: List[Node] = p_agent.path[next_iteration-1:]
+        # path: List[Node] = p_agent.path[next_iteration-1:]
+        # path: List[Node] = p_agent.path[next_iteration:]
         # assert len(path) > 1
-        for n in path:
+        for n in p_agent.path[next_iteration:]:
             new_map[n.x, n.y] = 0
     return new_map
-
-
-def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_func, h_dict, corridor_size: int, new_map: np.ndarray) -> List[Node] | None:
-    corridor: List[Node] = [agent.curr_node]
-    goal_h_map: np.ndarray = h_dict[agent.next_goal_node.xy_name]
-
-    def get_min_node(v_node, iterable_name):
-        iterable_node = nodes_dict[iterable_name]
-        if goal_h_map[iterable_node.x, iterable_node.y] < goal_h_map[v_node.x, v_node.y]:
-            return iterable_node
-        return v_node
-
-    def get_min_value(min_v, iterable_name):
-        iterable_node = nodes_dict[iterable_name]
-        iterable_node_value = goal_h_map[iterable_node.x, iterable_node.y]
-        if iterable_node_value < min_v:
-            return iterable_node_value
-        return min_v
-
-    for i in range(corridor_size):
-        next_node = corridor[-1]
-        # node_name_to_h_value_dict = {
-        #     node_name: h_func(agent.next_goal_node, nodes_dict[node_name])
-        #     for node_name in next_node.neighbours
-        # }
-        # min_node_name = min(node_name_to_h_value_dict, key=node_name_to_h_value_dict.get)
-        # min_node = nodes_dict[min_node_name]
-        # min_node = reduce(get_min_node, next_node.neighbours, next_node)
-        min_value: float = reduce(get_min_value, next_node.neighbours, goal_h_map[next_node.x, next_node.y])
-        min_nodes_names: List[str] = list(filter(
-            lambda n_name: goal_h_map[nodes_dict[n_name].x, nodes_dict[n_name].y] == min_value,
-            next_node.neighbours))
-        min_nodes: List[Node] = [nodes_dict[n_name] for n_name in min_nodes_names]
-        min_nodes: List[Node] = list(filter(lambda n: new_map[n.x, n.y] != 0, min_nodes))
-        if len(min_nodes) == 0:
-            return corridor
-        random.shuffle(min_nodes)
-        corridor.append(min_nodes[0])
-        # 1 - free space, 0 - occupied space
-        # if new_map[min_node.x, min_node.y] == 0:
-        #     return corridor
-        # corridor.append(min_node)
-    return corridor
 
 
 def get_agents_in_corridor(corridor: List[Node], node_name_to_f_agent_dict, node_name_to_f_agent_heap) -> list:
@@ -278,7 +236,8 @@ def get_tube(
 
     spanning_tree_dict: Dict[str, str | None] = {c_agent.curr_node.xy_name: None}
     open_list: Deque[Node] = deque([c_agent.curr_node])
-    closed_list: Deque[Node] = deque()
+    closed_list_heap: List[str] = []
+    heapq.heapify(closed_list_heap)
     small_iteration: int = 0
     while len(open_list) > 0:
         small_iteration += 1
@@ -289,8 +248,9 @@ def get_tube(
             tube = Tube(nodes, selected_node, tube_pattern)
             return True, tube
 
-        corridor_nodes: List[Node] = []
-        outer_nodes: List[Node] = []
+        # corridor_nodes: List[Node] = []
+        # outer_nodes: List[Node] = []
+        nei_nodes: List[Node] = []
         for nei_name in selected_node.neighbours:
             if nei_name == selected_node.xy_name:
                 continue
@@ -298,19 +258,22 @@ def get_tube(
             # 1 - free space, 0 - occupied space
             if new_map[nei_node.x, nei_node.y] == 0:
                 continue
-            if nei_node in closed_list:
+            if nei_node.xy_name in closed_list_heap:
                 continue
             if nei_node in open_list:
                 continue
             # connect nei_note to selected one
             spanning_tree_dict[nei_node.xy_name] = selected_node.xy_name
-            if nei_node in corridor_for_c_agents:
-                corridor_nodes.append(nei_node)
-            else:
-                outer_nodes.append(nei_node)
-        open_list.extendleft(outer_nodes)
-        open_list.extendleft(corridor_nodes)
-        closed_list.append(selected_node)
+            nei_nodes.append(nei_node)
+            # if nei_node in corridor_for_c_agents:
+            #     corridor_nodes.append(nei_node)
+            # else:
+            #     outer_nodes.append(nei_node)
+        random.shuffle(nei_nodes)
+        open_list.extendleft(nei_nodes)
+        # open_list.extendleft(outer_nodes)
+        # open_list.extendleft(corridor_nodes)
+        closed_list_heap.append(selected_node.xy_name)
     return False, None
 
 
@@ -412,13 +375,109 @@ def calc_a_star_corridor(agent, nodes_dict: Dict[str, Node], h_dict, corridor_si
     return corridor
 
 
-# corridor: List[Node] = [i_node]
-# parent = spanning_tree_dict[i_node.xy_name]
-# while parent is not None:
-#     parent_node = nodes_dict[parent]
-#     corridor.append(parent_node)
-#     parent = spanning_tree_dict[parent]
-# corridor.reverse()
+def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_func, h_dict, corridor_size: int, new_map: np.ndarray) -> List[Node] | None:
+    corridor: List[Node] = [agent.curr_node]
+    goal_h_map: np.ndarray = h_dict[agent.next_goal_node.xy_name]
+    goal_node: Node = agent.next_goal_node
+
+    # def get_min_node(v_node, iterable_name):
+    #     iterable_node = nodes_dict[iterable_name]
+    #     if goal_h_map[iterable_node.x, iterable_node.y] < goal_h_map[v_node.x, v_node.y]:
+    #         return iterable_node
+    #     return v_node
+
+    def get_min_value(min_v, iterable_name):
+        iterable_node = nodes_dict[iterable_name]
+        iterable_node_value = goal_h_map[iterable_node.x, iterable_node.y]
+        if iterable_node_value < min_v:
+            return iterable_node_value
+        return min_v
+
+    for i in range(corridor_size):
+        next_node = corridor[-1]
+        # node_name_to_h_value_dict = {
+        #     node_name: h_func(agent.next_goal_node, nodes_dict[node_name])
+        #     for node_name in next_node.neighbours
+        # }
+        # min_node_name = min(node_name_to_h_value_dict, key=node_name_to_h_value_dict.get)
+        # min_node = nodes_dict[min_node_name]
+        # min_node = reduce(get_min_node, next_node.neighbours, next_node)
+        min_value: float = reduce(get_min_value, next_node.neighbours, goal_h_map[next_node.x, next_node.y])
+        min_nodes_names: List[str] = list(filter(
+            lambda n_name: goal_h_map[nodes_dict[n_name].x, nodes_dict[n_name].y] == min_value,
+            next_node.neighbours))
+        min_nodes: List[Node] = [nodes_dict[n_name] for n_name in min_nodes_names]
+        min_nodes: List[Node] = list(filter(lambda n: new_map[n.x, n.y] != 0, min_nodes))
+        if len(min_nodes) == 0:
+            return corridor
+        random.shuffle(min_nodes)
+        min_node = min_nodes[0]
+        corridor.append(min_node)
+        if min_node == goal_node:
+            return corridor
+        # 1 - free space, 0 - occupied space
+        # if new_map[min_node.x, min_node.y] == 0:
+        #     return corridor
+        # corridor.append(min_node)
+    return corridor
+
+
+def is_freedom_node(node: Node, nodes_dict: Dict[str, Node]) -> bool:
+    assert len(node.neighbours) != 0
+    assert len(node.neighbours) != 1
+    if len(node.neighbours) == 2:
+        return True
+
+    prev_len = len(node.neighbours)
+    init_nei_names = node.neighbours[:]
+    init_nei_names.remove(node.xy_name)
+
+    assert len(init_nei_names) < prev_len
+    assert len(node.neighbours) == prev_len
+    assert len(init_nei_names) != 0
+    assert len(init_nei_names) > 1
+
+    first_nei_name = init_nei_names[0]
+    init_nei_names.remove(first_nei_name)
+    first_nei = nodes_dict[first_nei_name]
+
+    open_list: Deque[Node] = deque([first_nei])
+    open_names_list_heap = [f'{first_nei.xy_name}']
+    heapq.heapify(open_names_list_heap)
+    closed_names_list_heap = [f'{node.xy_name}']
+    heapq.heapify(closed_names_list_heap)
+
+    iteration = 0
+    while len(open_list) > 0:
+        iteration += 1
+        next_node = open_list.pop()
+        open_names_list_heap.remove(next_node.xy_name)
+        if next_node.xy_name in init_nei_names:
+            init_nei_names.remove(next_node.xy_name)
+            if len(init_nei_names) == 0:
+                return True
+        for nei_name in next_node.neighbours:
+            if nei_name == next_node.xy_name:
+                continue
+            if nei_name in closed_names_list_heap:
+                continue
+            if nei_name in open_names_list_heap:
+                continue
+            nei_node = nodes_dict[nei_name]
+
+            open_list.appendleft(nei_node)
+            heapq.heappush(open_names_list_heap, nei_name)
+        heapq.heappush(closed_names_list_heap, next_node.xy_name)
+
+    return False
+
+
+def get_freedom_nodes_np(nodes: List[Node], nodes_dict: Dict[str, Node], img_np: np.ndarray) -> np.ndarray:
+    freedom_nodes_np = np.zeros(img_np.shape)
+    for node in nodes:
+        if is_freedom_node(node, nodes_dict):
+            freedom_nodes_np[node.x, node.y] = 1
+    return freedom_nodes_np
 
 
 
