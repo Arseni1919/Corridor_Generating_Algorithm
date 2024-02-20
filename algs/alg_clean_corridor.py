@@ -1,4 +1,5 @@
 import heapq
+import random
 
 import matplotlib.pyplot as plt
 from collections import deque
@@ -94,10 +95,10 @@ class Tube:
 
             # all t_agents wait until the last of them will arrive to its start locations from movements of other tubes
             max_time, freedom_times_dict = self.get_max_time(next_iteration, captured_agents)
-            for t_agent in t_agents:
-                while len(t_agent.path[next_iteration:]) < max_time:
-                    t_agent.path.append(t_agent.path[-1])
-                assert len(t_agent.path[next_iteration:]) == max_time
+            # for t_agent in t_agents:
+            #     while len(t_agent.path[next_iteration:]) < max_time:
+            #         t_agent.path.append(t_agent.path[-1])
+            #     assert len(t_agent.path[next_iteration:]) == max_time
 
             to_nodes = self.get_to_nodes(from_nodes, from_pattern)
             # assign to each t_agent its final location
@@ -120,18 +121,20 @@ class Tube:
             for to_t_node, from_t_node in pairwise_tube:
                 if from_t_node.xy_name in step_dict:
                     curr_agent = step_dict[from_t_node.xy_name]
-                    # if len(curr_agent.path[next_iteration:]) > next_iteration - 1 + i_time:
-                    #     continue
+                    if len(curr_agent.path[next_iteration:]) >= i_time:
+                        there_is_movement = True
+                        continue
                     if curr_agent.name in agent_to_final_node_dict and agent_to_final_node_dict[curr_agent.name] == from_t_node:
                         # curr_agent.path.append(from_t_node)
                         continue
                     elif to_t_node.xy_name in step_dict:
-                        # curr_agent.path.append(from_t_node)
+                        curr_agent.path.append(from_t_node)
+                        there_is_movement = True
                         continue
-                    # elif i_time <= freedom_times_dict[to_t_node.xy_name]:
-                    #     curr_agent.path.append(from_t_node)
-                    #     there_is_movement = True
-                    #     continue
+                    elif i_time <= freedom_times_dict[to_t_node.xy_name]:
+                        curr_agent.path.append(from_t_node)
+                        there_is_movement = True
+                        continue
                     else:
                         curr_agent.path.append(to_t_node)
                         there_is_movement = True
@@ -201,6 +204,13 @@ def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_func, h_dict, cor
             return iterable_node
         return v_node
 
+    def get_min_value(min_v, iterable_name):
+        iterable_node = nodes_dict[iterable_name]
+        iterable_node_value = goal_h_map[iterable_node.x, iterable_node.y]
+        if iterable_node_value < min_v:
+            return iterable_node_value
+        return min_v
+
     for i in range(corridor_size):
         next_node = corridor[-1]
         # node_name_to_h_value_dict = {
@@ -209,11 +219,21 @@ def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_func, h_dict, cor
         # }
         # min_node_name = min(node_name_to_h_value_dict, key=node_name_to_h_value_dict.get)
         # min_node = nodes_dict[min_node_name]
-        min_node = reduce(get_min_node, next_node.neighbours, next_node)
-        # 1 - free space, 0 - occupied space
-        if new_map[min_node.x, min_node.y] == 0:
+        # min_node = reduce(get_min_node, next_node.neighbours, next_node)
+        min_value: float = reduce(get_min_value, next_node.neighbours, goal_h_map[next_node.x, next_node.y])
+        min_nodes_names: List[str] = list(filter(
+            lambda n_name: goal_h_map[nodes_dict[n_name].x, nodes_dict[n_name].y] == min_value,
+            next_node.neighbours))
+        min_nodes: List[Node] = [nodes_dict[n_name] for n_name in min_nodes_names]
+        min_nodes: List[Node] = list(filter(lambda n: new_map[n.x, n.y] != 0, min_nodes))
+        if len(min_nodes) == 0:
             return corridor
-        corridor.append(min_node)
+        random.shuffle(min_nodes)
+        corridor.append(min_nodes[0])
+        # 1 - free space, 0 - occupied space
+        # if new_map[min_node.x, min_node.y] == 0:
+        #     return corridor
+        # corridor.append(min_node)
     return corridor
 
 
@@ -294,6 +314,17 @@ def get_tube(
     return False, None
 
 
+def collapse_corridor(corridor: List[Node]):
+    out_corridor: List[Node] = [corridor[0]]
+    for from_n, to_n in pairwise_list(corridor):
+        if to_n == from_n:
+            continue
+        assert to_n.xy_name in out_corridor[-1].neighbours
+        out_corridor.append(to_n)
+
+    return out_corridor
+
+
 def calc_a_star_corridor(agent, nodes_dict: Dict[str, Node], h_dict, corridor_size: int, new_map: np.ndarray) -> List[Node] | None:
     """
 
@@ -310,39 +341,45 @@ def calc_a_star_corridor(agent, nodes_dict: Dict[str, Node], h_dict, corridor_si
     initial_h = goal_h_dict[curr_node.x, curr_node.y]
     open_list = [((0 + initial_h, initial_h), curr_node)]
     heapq.heapify(open_list)
-    open_names_list = [curr_node.xy_name]
+    open_names_list = [f'{curr_node.xy_name}_0']
     heapq.heapify(open_names_list)
     closed_list = []
     heapq.heapify(closed_list)
     closed_names_list = []
     heapq.heapify(closed_names_list)
-    spanning_tree_dict: Dict[str, str | None] = {curr_node.xy_name: None}  # child: parent
+    spanning_tree_dict: Dict[str, str | None] = {f'{curr_node.xy_name}_0': None}  # child: parent
+    xyt_nodes_dict = {f'{curr_node.xy_name}_0': curr_node}
 
     iteration = 0
+    i_t = 0
     i_node = curr_node
     while len(open_list) > 0:
         iteration += 1
         (i_f, i_h), i_node = heapq.heappop(open_list)
-        i_t = i_f - i_h
-        open_names_list.remove(i_node.xy_name)
+        i_t = int(i_f - i_h)
+        open_names_list.remove(f'{i_node.xy_name}_{i_t}')
         # print()
 
         if i_node == next_goal_node or i_t >= corridor_size:
             # we have reached the end
             corridor: List[Node] = [i_node]
-            parent = spanning_tree_dict[i_node.xy_name]
+            j = i_t
+            parent = spanning_tree_dict[f'{i_node.xy_name}_{j}']
             while parent is not None:
-                parent_node = nodes_dict[parent]
+                parent_node = xyt_nodes_dict[parent]
                 corridor.append(parent_node)
                 parent = spanning_tree_dict[parent]
             corridor.reverse()
+            corridor = collapse_corridor(corridor)
             return corridor
 
         node_current_neighbours = i_node.neighbours[:]
         random.shuffle(node_current_neighbours)
         for successor_xy_name in node_current_neighbours:
-            if successor_xy_name == i_node.xy_name:
-                continue
+            new_t = i_t + 1
+            successor_xyt_name = f'{successor_xy_name}_{new_t}'
+            # if successor_xy_name == i_node.xy_name:
+            #     continue
             if successor_xy_name in open_names_list:
                 continue
             if successor_xy_name in closed_names_list:
@@ -355,22 +392,33 @@ def calc_a_star_corridor(agent, nodes_dict: Dict[str, Node], h_dict, corridor_si
             # if new_h > initial_h + 1:
             #     continue
 
-            new_t = i_t + 1
-            spanning_tree_dict[successor_xy_name] = i_node.xy_name
+            spanning_tree_dict[successor_xyt_name] = f'{i_node.xy_name}_{i_t}'
+            xyt_nodes_dict[f'{successor_xy_name}_{new_t}'] = node_successor
             heapq.heappush(open_list, ((new_t + new_h, new_h), node_successor))
-            heapq.heappush(open_names_list, successor_xy_name)
+            heapq.heappush(open_names_list, successor_xyt_name)
 
         heapq.heappush(closed_list, ((i_f, i_h), i_node))
-        heapq.heappush(closed_names_list, i_node.xy_name)
+        heapq.heappush(closed_names_list, f'{i_node.xy_name}_{i_t}')
 
     corridor: List[Node] = [i_node]
-    parent = spanning_tree_dict[i_node.xy_name]
+    j = i_t
+    parent = spanning_tree_dict[f'{i_node.xy_name}_{j}']
     while parent is not None:
-        parent_node = nodes_dict[parent]
+        parent_node = xyt_nodes_dict[parent]
         corridor.append(parent_node)
         parent = spanning_tree_dict[parent]
     corridor.reverse()
+    corridor = collapse_corridor(corridor)
     return corridor
+
+
+# corridor: List[Node] = [i_node]
+# parent = spanning_tree_dict[i_node.xy_name]
+# while parent is not None:
+#     parent_node = nodes_dict[parent]
+#     corridor.append(parent_node)
+#     parent = spanning_tree_dict[parent]
+# corridor.reverse()
 
 
 

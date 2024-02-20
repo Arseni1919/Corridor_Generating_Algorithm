@@ -356,9 +356,8 @@ class ALgLMAPFGenCor:
         assert new_map[agent.curr_node.x, agent.curr_node.y] == 1
 
         # create a corridor to agent's goal in the given map to the max length straight through descending h-values
-        # corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_func, self.h_dict, self.corridor_size, new_map)
+        corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_func, self.h_dict, self.corridor_size, new_map)
         # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
-        corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
         # if a corridor just a single node (that means it only contains the current location), then return False
         assert len(corridor) != 0
         if len(corridor) == 1:
@@ -491,8 +490,9 @@ def main():
     # N = 100
     # N = 150
     # N = 200
+    N = 250
     # N = 300
-    N = 400
+    # N = 400
     # N = 500
     # N = 600
     # N = 620
@@ -501,22 +501,23 @@ def main():
     # N = 850
     # N = 2000
     # img_dir = '10_10_my_rand.map'
-    # img_dir = 'empty-32-32.map'
+    img_dir = 'empty-32-32.map'
+    # img_dir = 'random-32-32-10.map'
     # img_dir = 'random-32-32-20.map'
     # img_dir = 'room-32-32-4.map'
-    img_dir = 'maze-32-32-2.map'
+    # img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
     # max_time = 20
     max_time = 100
     # max_time = 200
     # corridor_size = 20
     # corridor_size = 10
-    corridor_size = 5
+    # corridor_size = 5
     # corridor_size = 3
-    # corridor_size = 1
+    corridor_size = 1
 
-    # to_render: bool = True
-    to_render: bool = False
+    to_render: bool = True
+    # to_render: bool = False
 
     # to_check_paths: bool = True
     to_check_paths: bool = False
@@ -543,6 +544,7 @@ def main():
         obs, metrics, terminated, info = env.step(actions)
 
         # update metrics + render
+        print(f'\ntotal_finished_goals -> {metrics['total_finished_goals']} ')
         total_unique_moves_list.append(metrics['total_unique_moves'])
         total_finished_goals_list.append(metrics['total_finished_goals'])
         if to_render:
