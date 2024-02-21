@@ -406,6 +406,44 @@ def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_dict, corridor_si
     return corridor
 
 
+def calc_smart_corridor(agent, nodes_dict: Dict[str, Node], h_dict, new_map: np.ndarray, freedom_nodes_np: np.ndarray, corridor_size: int = 1) -> List[Node] | None:
+    corridor: List[Node] = [agent.curr_node]
+    goal_h_map: np.ndarray = h_dict[agent.next_goal_node.xy_name]
+    goal_node: Node = agent.next_goal_node
+
+    def get_min_value(min_v, iterable_name):
+        iterable_node = nodes_dict[iterable_name]
+        iterable_node_value = goal_h_map[iterable_node.x, iterable_node.y]
+        if iterable_node_value < min_v:
+            return iterable_node_value
+        return min_v
+
+    finished: bool = False
+    iteration: int = 0
+    while not finished:
+        iteration += 1
+        next_node = corridor[-1]
+        min_value: float = reduce(get_min_value, next_node.neighbours, goal_h_map[next_node.x, next_node.y])
+        min_nodes_names: List[str] = list(filter(
+            lambda n_name: goal_h_map[nodes_dict[n_name].x, nodes_dict[n_name].y] == min_value,
+            next_node.neighbours))
+        min_nodes: List[Node] = [nodes_dict[n_name] for n_name in min_nodes_names]
+        # 1 - free space, 0 - occupied space
+        min_nodes: List[Node] = list(filter(lambda n: new_map[n.x, n.y] != 0, min_nodes))
+        if len(min_nodes) == 0:
+            return corridor
+        random.shuffle(min_nodes)
+        min_node = min_nodes[0]
+        corridor.append(min_node)
+        if min_node == goal_node:
+            return corridor
+        if iteration < corridor_size:
+            continue
+        if freedom_nodes_np[min_node.x, min_node.y]:
+            return corridor
+    return corridor
+
+
 def is_freedom_node(node: Node, nodes_dict: Dict[str, Node]) -> bool:
     assert len(node.neighbours) != 0
     assert len(node.neighbours) != 1

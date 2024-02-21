@@ -67,8 +67,8 @@ class ALgLMAPFGenCor:
         # for the map
         self.img_dir = self.env.img_dir
         self.nodes, self.nodes_dict = copy_nodes(self.env.nodes)
-        self.img_np = self.env.img_np
-        self.freedom_nodes_np = get_freedom_nodes_np(self.nodes, self.nodes_dict, self.img_np)
+        self.img_np: np.ndarray = self.env.img_np
+        self.freedom_nodes_np: np.ndarray = get_freedom_nodes_np(self.nodes, self.nodes_dict, self.img_np)
         self.map_dim = self.env.map_dim
         self.h_func = self.env.h_func
         self.h_dict = self.env.h_dict
@@ -163,8 +163,8 @@ class ALgLMAPFGenCor:
         for agent in self.global_order:
             if self.to_assert:
                 assert agent.curr_node == agent.path[self.next_iteration - 1]
-            if self.next_iteration % self.corridor_size == 0:
-                agent.path = agent.path[:self.next_iteration]
+            # if self.next_iteration % self.corridor_size == 0:
+            #     agent.path = agent.path[:self.next_iteration]
             if len(agent.path[self.next_iteration:]) > 0:
                 planned_agents.append(agent)
                 heapq.heappush(pa_heap, agent.num)
@@ -228,7 +228,7 @@ class ALgLMAPFGenCor:
                     assert f_agent.curr_node == f_agent.path[self.next_iteration - 1]
                     assert len(f_agent.path[self.next_iteration:]) == 0
 
-        path_horizon = self.next_iteration + (self.corridor_size - self.next_iteration % self.corridor_size)
+        # path_horizon = self.next_iteration + (self.corridor_size - self.next_iteration % self.corridor_size)
         remained_agents: List[AlgAgentLMAPF] = list(filter(lambda a: a.num not in pa_heap, fresh_agents))
         for agent in remained_agents:
             # if you still have no path (you didn't create it for yourself and others didn't do it for you),
@@ -324,7 +324,8 @@ class ALgLMAPFGenCor:
         assert new_map[agent.curr_node.x, agent.curr_node.y] == 1
 
         # create a corridor to agent's goal in the given map to the max length straight through descending h-values
-        corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
+        # corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
+        corridor = calc_smart_corridor(agent, self.nodes_dict, self.h_dict, new_map, self.freedom_nodes_np, self.corridor_size)
         # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
         # if a corridor just a single node (that means it only contains the current location), then return False
         assert len(corridor) != 0
@@ -456,11 +457,11 @@ def main():
     set_seed(random_seed_bool=True)
     # N = 70
     # N = 100
-    # N = 150
+    N = 150
     # N = 200
     # N = 250
     # N = 300
-    N = 400
+    # N = 400
     # N = 500
     # N = 600
     # N = 620
@@ -469,12 +470,12 @@ def main():
     # N = 850
     # N = 2000
     # img_dir = '10_10_my_rand.map'
-    img_dir = 'empty-32-32.map'
+    # img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-10.map'
     # img_dir = 'random-32-32-20.map'
-    # img_dir = 'room-32-32-4.map'
+    img_dir = 'room-32-32-4.map'
     # img_dir = 'maze-32-32-2.map'
-    # img_dir = 'random-64-64-20.map'
+    # img_dir = 'random-64 -64-20.map'
     # max_time = 20
     max_time = 100
     # max_time = 200
@@ -482,7 +483,8 @@ def main():
     # corridor_size = 10
     # corridor_size = 5
     # corridor_size = 3
-    corridor_size = 1
+    corridor_size = 2
+    # corridor_size = 1
 
     to_render: bool = True
     # to_render: bool = False
