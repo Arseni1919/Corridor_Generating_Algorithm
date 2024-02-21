@@ -406,10 +406,9 @@ def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_dict, corridor_si
     return corridor
 
 
-def calc_smart_corridor(agent, nodes_dict: Dict[str, Node], h_dict, new_map: np.ndarray, freedom_nodes_np: np.ndarray, corridor_size: int = 1) -> List[Node] | None:
-    corridor: List[Node] = [agent.curr_node]
-    goal_h_map: np.ndarray = h_dict[agent.next_goal_node.xy_name]
-    goal_node: Node = agent.next_goal_node
+def calc_smart_corridor(curr_node: Node, goal_node: Node, nodes_dict: Dict[str, Node], h_dict, new_map: np.ndarray, freedom_nodes_np: np.ndarray, corridor_size: int = 1) -> List[Node] | None:
+    corridor: List[Node] = [curr_node]
+    goal_h_map: np.ndarray = h_dict[goal_node.xy_name]
 
     def get_min_value(min_v, iterable_name):
         iterable_node = nodes_dict[iterable_name]

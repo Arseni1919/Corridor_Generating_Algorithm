@@ -325,7 +325,7 @@ class ALgLMAPFGenCor:
 
         # create a corridor to agent's goal in the given map to the max length straight through descending h-values
         # corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
-        corridor = calc_smart_corridor(agent, self.nodes_dict, self.h_dict, new_map, self.freedom_nodes_np, self.corridor_size)
+        corridor = calc_smart_corridor(agent.curr_node, agent.next_goal_node, self.nodes_dict, self.h_dict, new_map, self.freedom_nodes_np, self.corridor_size)
         # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
         # if a corridor just a single node (that means it only contains the current location), then return False
         assert len(corridor) != 0
@@ -376,8 +376,9 @@ class ALgLMAPFGenCor:
             tubes.append(tube)
 
         # if you are here that means all c_agents found their tubes, and we are ready to move things
-        for tube in tubes:
-            assert len(tube) >= 2
+        if self.to_assert:
+            for tube in tubes:
+                assert len(tube) >= 2
 
         # up until now no one moved
         if self.to_assert:
