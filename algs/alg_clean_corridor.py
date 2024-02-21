@@ -497,10 +497,12 @@ def is_freedom_node(node: Node, nodes_dict: Dict[str, Node]) -> bool:
 
 
 def get_freedom_nodes_np(nodes: List[Node], nodes_dict: Dict[str, Node], img_np: np.ndarray) -> np.ndarray:
+    print('Started to get freedom nodes...')
     freedom_nodes_np = np.zeros(img_np.shape)
     for node in nodes:
         if is_freedom_node(node, nodes_dict):
             freedom_nodes_np[node.x, node.y] = 1
+    print('Finished freedom nodes.')
     return freedom_nodes_np
 
 
