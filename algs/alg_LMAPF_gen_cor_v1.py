@@ -163,8 +163,8 @@ class ALgLMAPFGenCor:
         for agent in self.global_order:
             if self.to_assert:
                 assert agent.curr_node == agent.path[self.next_iteration - 1]
-            # if self.next_iteration % self.corridor_size == 0:
-            #     agent.path = agent.path[:self.next_iteration]
+            if self.next_iteration % self.corridor_size == 0:
+                agent.path = agent.path[:self.next_iteration]
             if len(agent.path[self.next_iteration:]) > 0:
                 planned_agents.append(agent)
                 heapq.heappush(pa_heap, agent.num)
@@ -414,7 +414,6 @@ class ALgLMAPFGenCor:
             if self.to_check_paths:
                 check_paths(captured_agents, self.next_iteration)
 
-
         # finally, let's move the main agent through the corridor
         move_main_agent(agent, corridor, captured_agents, self.next_iteration)
 
@@ -453,11 +452,11 @@ class ALgLMAPFGenCor:
 
 @use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
 def main():
-    # set_seed(random_seed_bool=False, seed=373)
-    set_seed(random_seed_bool=True)
-    # N = 70
+    set_seed(random_seed_bool=False, seed=7877)
+    # set_seed(random_seed_bool=True)
+    N = 50
     # N = 100
-    N = 150
+    # N = 150
     # N = 200
     # N = 250
     # N = 300
@@ -473,8 +472,9 @@ def main():
     # img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-10.map'
     # img_dir = 'random-32-32-20.map'
-    img_dir = 'room-32-32-4.map'
+    # img_dir = 'room-32-32-4.map'
     # img_dir = 'maze-32-32-2.map'
+    img_dir = 'maze-32-32-4.map'
     # img_dir = 'random-64 -64-20.map'
     # max_time = 20
     max_time = 100
@@ -483,8 +483,8 @@ def main():
     # corridor_size = 10
     # corridor_size = 5
     # corridor_size = 3
-    corridor_size = 2
-    # corridor_size = 1
+    # corridor_size = 2
+    corridor_size = 1
 
     to_render: bool = True
     # to_render: bool = False
