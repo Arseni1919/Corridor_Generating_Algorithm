@@ -324,7 +324,7 @@ class ALgLMAPFGenCor:
         assert new_map[agent.curr_node.x, agent.curr_node.y] == 1
 
         # create a corridor to agent's goal in the given map to the max length straight through descending h-values
-        corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_func, self.h_dict, self.corridor_size, new_map)
+        corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
         # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
         # if a corridor just a single node (that means it only contains the current location), then return False
         assert len(corridor) != 0

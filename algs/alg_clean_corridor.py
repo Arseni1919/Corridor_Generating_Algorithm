@@ -375,16 +375,10 @@ def calc_a_star_corridor(agent, nodes_dict: Dict[str, Node], h_dict, corridor_si
     return corridor
 
 
-def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_func, h_dict, corridor_size: int, new_map: np.ndarray) -> List[Node] | None:
+def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_dict, corridor_size: int, new_map: np.ndarray) -> List[Node] | None:
     corridor: List[Node] = [agent.curr_node]
     goal_h_map: np.ndarray = h_dict[agent.next_goal_node.xy_name]
     goal_node: Node = agent.next_goal_node
-
-    # def get_min_node(v_node, iterable_name):
-    #     iterable_node = nodes_dict[iterable_name]
-    #     if goal_h_map[iterable_node.x, iterable_node.y] < goal_h_map[v_node.x, v_node.y]:
-    #         return iterable_node
-    #     return v_node
 
     def get_min_value(min_v, iterable_name):
         iterable_node = nodes_dict[iterable_name]
@@ -395,18 +389,12 @@ def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_func, h_dict, cor
 
     for i in range(corridor_size):
         next_node = corridor[-1]
-        # node_name_to_h_value_dict = {
-        #     node_name: h_func(agent.next_goal_node, nodes_dict[node_name])
-        #     for node_name in next_node.neighbours
-        # }
-        # min_node_name = min(node_name_to_h_value_dict, key=node_name_to_h_value_dict.get)
-        # min_node = nodes_dict[min_node_name]
-        # min_node = reduce(get_min_node, next_node.neighbours, next_node)
         min_value: float = reduce(get_min_value, next_node.neighbours, goal_h_map[next_node.x, next_node.y])
         min_nodes_names: List[str] = list(filter(
             lambda n_name: goal_h_map[nodes_dict[n_name].x, nodes_dict[n_name].y] == min_value,
             next_node.neighbours))
         min_nodes: List[Node] = [nodes_dict[n_name] for n_name in min_nodes_names]
+        # 1 - free space, 0 - occupied space
         min_nodes: List[Node] = list(filter(lambda n: new_map[n.x, n.y] != 0, min_nodes))
         if len(min_nodes) == 0:
             return corridor
@@ -415,10 +403,6 @@ def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_func, h_dict, cor
         corridor.append(min_node)
         if min_node == goal_node:
             return corridor
-        # 1 - free space, 0 - occupied space
-        # if new_map[min_node.x, min_node.y] == 0:
-        #     return corridor
-        # corridor.append(min_node)
     return corridor
 
 
