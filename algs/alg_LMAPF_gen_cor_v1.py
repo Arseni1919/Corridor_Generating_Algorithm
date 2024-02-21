@@ -310,70 +310,81 @@ class ALgLMAPFGenCor:
         print(f'\r[{p_counter}][{agent.name}] _plan_for_agent', end='')
         node_name_to_f_agent_dict = {f_agent.curr_node.xy_name: f_agent for f_agent in flex_agents}
         node_name_to_f_agent_heap = list(node_name_to_f_agent_dict.keys())
-        # node_name_to_f_agent_dict, node_name_to_f_agent_heap
-        assert agent not in planned_agents
-        assert self.img_np[agent.curr_node.x, agent.curr_node.y] == 1
         # create a relevant map where the planned agents are considered as walls
         new_map: np.ndarray = create_new_map(self.img_np, planned_agents, self.next_iteration)
-        # fig, ax = plt.subplots(1, 2, figsize=(14, 7))
-        # agents_to_plot = [a for a in flex_agents]
-        # agents_to_plot.append(agent)
-        # plot_info = {'img_np': new_map, 'agents': agents_to_plot}
-        # plot_step_in_env(ax[0], plot_info)
-        # plt.show()
         assert new_map[agent.curr_node.x, agent.curr_node.y] == 1
 
-        # create a corridor to agent's goal in the given map to the max length straight through descending h-values
-        # corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
-        corridor = calc_smart_corridor(agent.curr_node, agent.next_goal_node, self.nodes_dict, self.h_dict, new_map, self.freedom_nodes_np, self.corridor_size)
-        # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
-        # if a corridor just a single node (that means it only contains the current location), then return False
-        assert len(corridor) != 0
+        # ------------------------- #
+        corridor, c_agents, tubes = self.get_corridor_and_tubes(
+            agent.curr_node, agent.next_goal_node, new_map, node_name_to_f_agent_dict, node_name_to_f_agent_heap)
+
         if len(corridor) == 1:
             assert corridor[-1] == agent.curr_node
             return False, []
 
-        # if you are here that means the corridor is of the length of 2 or higher
-        assert len(corridor) >= 2
-        assert corridor[0] == agent.curr_node  # the first node is agent's current location
-        for n in corridor:
-            assert new_map[n.x, n.y]
-
-        # check if there are any agents inside the corridor
-        c_agents: List[AlgAgentLMAPF] = get_agents_in_corridor(corridor, node_name_to_f_agent_dict, node_name_to_f_agent_heap)
-
-        # if there are no agents inside the corridor, then update agent's path and return True with []
         if len(c_agents) == 0:
             agent.path.extend(corridor[1:])
-
-            # CHECK FULL PATHS FORWARD
-            if self.to_check_paths:
-                agents_to_check = planned_agents[:]
-                agents_to_check.append(agent)
-                check_paths(agents_to_check, self.next_iteration)
-
             return True, []
 
-        # if you are here that means there are other agents inside the corridor (lets call them c_agents)
-        assert len(c_agents) > 0
+        # ------------------------- #
+        # ------------------------- #
+        # # create a corridor to agent's goal in the given map to the max length straight through descending h-values
+        # corridor = calc_smart_corridor(agent.curr_node, agent.next_goal_node, self.nodes_dict, self.h_dict, new_map,
+        #                                self.freedom_nodes_np, self.corridor_size)
+        # # corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
+        # # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
+        #
+        # # if a corridor just a single node (that means it only contains the current location), then return False
+        # assert len(corridor) != 0
+        # if len(corridor) == 1:
+        #     assert corridor[-1] == agent.curr_node
+        #     return False, []
+        #
+        # # if you are here that means the corridor is of the length of 2 or higher
+        # assert len(corridor) >= 2
+        # assert corridor[0] == agent.curr_node  # the first node is agent's current location
+        # for n in corridor:
+        #     assert new_map[n.x, n.y]
+        #
+        # # check if there are any agents inside the corridor
+        # c_agents: List[AlgAgentLMAPF] = get_agents_in_corridor(corridor, node_name_to_f_agent_dict,
+        #                                                        node_name_to_f_agent_heap)
+        #
+        # # if there are no agents inside the corridor, then update agent's path and return True with []
+        # if len(c_agents) == 0:
+        #     agent.path.extend(corridor[1:])
+        #
+        #     # CHECK FULL PATHS FORWARD
+        #     if self.to_check_paths:
+        #         agents_to_check = planned_agents[:]
+        #         agents_to_check.append(agent)
+        #         check_paths(agents_to_check, self.next_iteration)
+        #
+        #     return True, []
+        #
+        # # if you are here that means there are other agents inside the corridor (lets call them c_agents)
+        # assert len(c_agents) > 0
+        #
+        # # the c_agents are not allowed to pass through current location of the agent
+        # corridor_for_c_agents = corridor[1:]
+        # new_map[agent.curr_node.x, agent.curr_node.y] = 0
+        # tubes: List[Tube] = []
+        #
+        # for c_agent in c_agents:
+        #     # try to create a tube + free_node for c_agent (a new free_node must be different from other free_nodes)
+        #     solvable, tube = get_tube(
+        #         c_agent, new_map, tubes, corridor_for_c_agents, self.nodes_dict, node_name_to_f_agent_heap, self.to_assert
+        #     )
+        #
+        #     # if there is no tube, then return False
+        #     if not solvable:
+        #         return False, []
+        #
+        #     # tubes <- tube, free_node
+        #     tubes.append(tube)
 
-        # the c_agents are not allowed to pass through current location of the agent
-        corridor_for_c_agents = corridor[1:]
-        new_map[agent.curr_node.x, agent.curr_node.y] = 0
-        tubes: List[Tube] = []
-
-        for c_agent in c_agents:
-            # try to create a tube + free_node for c_agent (a new free_node must be different from other free_nodes)
-            solvable, tube = get_tube(
-                c_agent, new_map, tubes, corridor_for_c_agents, self.nodes_dict, node_name_to_f_agent_heap, self.to_assert
-            )
-
-            # if there is no tube, then return False
-            if not solvable:
-                return False, []
-
-            # tubes <- tube, free_node
-            tubes.append(tube)
+        # ------------------------- #
+        # ------------------------- #
 
         # if you are here that means all c_agents found their tubes, and we are ready to move things
         if self.to_assert:
@@ -388,6 +399,8 @@ class ALgLMAPFGenCor:
 
         # let's define captured_agents to be the list of all agents that we will move in addition to the main agent
         captured_agents: List[AlgAgentLMAPF] = []
+        captured_agents_names: List[str] = []
+        heapq.heapify(captured_agents_names)
 
         if self.to_assert:
             for c_agent in c_agents:
@@ -409,7 +422,8 @@ class ALgLMAPFGenCor:
                 check_paths(t_agents, self.next_iteration)
 
             for t_agent in t_agents:
-                if t_agent not in captured_agents:
+                if t_agent.name not in captured_agents_names:
+                    heapq.heappush(captured_agents_names, t_agent.name)
                     captured_agents.append(t_agent)
 
             if self.to_check_paths:
@@ -441,24 +455,92 @@ class ALgLMAPFGenCor:
             # agents_to_check.extend(captured_agents)
             # agents_to_check.append(agent)
             # check_paths(agents_to_check, self.next_iteration)
-
-        # agent_to_check = planned_agents[:]
-        # agent_to_check.extend(captured_agents)
-        # agent_to_check.append(agent)
-        # check_vc_ec_neic_iter(agent_to_check, self.next_iteration)
         return True, captured_agents
 
-        # ----------------------------- #
+    def get_corridor_and_tubes(self,
+                               curr_node: Node,
+                               goal_node: Node,
+                               new_map: np.ndarray,
+                               node_name_to_f_agent_dict: Dict[str, AlgAgentLMAPF],
+                               node_name_to_f_agent_heap: List[str]) -> Tuple[List[Node], List[AlgAgentLMAPF], List[Tube]]:
+        """
+        :return: corridor, c_agents, tubes
+        """
+        # ------------------------- #
+        i_goal_node = goal_node
+        for i_try in range(2):
+            new_map[curr_node.x, curr_node.y] = 1
+            # create a corridor to agent's goal in the given map to the max length straight through descending h-values
+            corridor = calc_smart_corridor(curr_node, i_goal_node,
+                                           self.nodes_dict, self.h_dict,
+                                           new_map, self.freedom_nodes_np, self.corridor_size)
+            # corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
+            # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
+
+            # if a corridor just a single node (that means it only contains the current location), then return False
+            assert len(corridor) != 0
+            if len(corridor) == 1:
+                assert corridor[-1] == curr_node
+                return corridor, [], []
+
+            # if you are here that means the corridor is of the length of 2 or higher
+            assert len(corridor) >= 2
+            assert corridor[0] == curr_node  # the first node is agent's current location
+            for n in corridor:
+                assert new_map[n.x, n.y]
+
+            # check if there are any agents inside the corridor
+            c_agents: List[AlgAgentLMAPF] = get_agents_in_corridor(corridor, node_name_to_f_agent_dict,
+                                                                   node_name_to_f_agent_heap)
+
+            # if there are no agents inside the corridor, then update agent's path and return True with []
+            if len(c_agents) == 0:
+                return corridor, [], []
+
+            # if you are here that means there are other agents inside the corridor (lets call them c_agents)
+            assert len(c_agents) > 0
+
+            # the c_agents are not allowed to pass through current location of the agent
+            corridor_for_c_agents = corridor[1:]
+            new_map[curr_node.x, curr_node.y] = 0
+            tubes: List[Tube] = []
+
+            tubes_are_good: bool = True
+            for c_agent in c_agents:
+                # try to create a tube + free_node for c_agent (a new free_node must be different from other free_nodes)
+                solvable, tube = get_tube(
+                    c_agent, new_map, tubes, corridor_for_c_agents, self.nodes_dict, node_name_to_f_agent_heap,
+                    self.to_assert
+                )
+
+                # if there is no tube, then return False
+                if not solvable:
+                    tubes_are_good = False
+                    break
+
+                # tubes <- tube, free_node
+                tubes.append(tube)
+
+            if not tubes_are_good:
+                i_goal_node = find_nearest_freedom_node(curr_node, self.nodes_dict, self.freedom_nodes_np)
+                continue
+
+            return corridor, c_agents, tubes
+
+        return [curr_node], [], []
+
+        # ------------------------- #
 
 
 @use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
 def main():
-    set_seed(random_seed_bool=False, seed=7877)
-    # set_seed(random_seed_bool=True)
-    N = 50
+    # set_seed(random_seed_bool=False, seed=7877)
+    # set_seed(random_seed_bool=False, seed=123)
+    set_seed(random_seed_bool=True)
+    # N = 50
     # N = 100
     # N = 150
-    # N = 200
+    N = 200
     # N = 250
     # N = 300
     # N = 400
@@ -519,7 +601,7 @@ def main():
         total_unique_moves_list.append(metrics['total_unique_moves'])
         total_finished_goals_list.append(metrics['total_finished_goals'])
         if to_render:
-            i_agent = alg.agents[0]
+            i_agent = alg.global_order[0]
             plot_info = {
                 'i': i_step, 'iterations': max_time, 'img_dir': img_dir, 'img_np': alg.img_np,
                 'n_agents': env.n_agents, 'agents': alg.agents,
@@ -580,3 +662,13 @@ if __name__ == '__main__':
 #     captured_agents.append(o_agent)
 #
 # return True, captured_agents
+
+# fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+# agents_to_plot = [a for a in flex_agents]
+# agents_to_plot.append(agent)
+# plot_info = {'img_np': new_map, 'agents': agents_to_plot}
+# plot_step_in_env(ax[0], plot_info)
+# plt.show()
+
+
+

@@ -406,7 +406,10 @@ def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_dict, corridor_si
     return corridor
 
 
-def calc_smart_corridor(curr_node: Node, goal_node: Node, nodes_dict: Dict[str, Node], h_dict, new_map: np.ndarray, freedom_nodes_np: np.ndarray, corridor_size: int = 1) -> List[Node] | None:
+def calc_smart_corridor(curr_node: Node, goal_node: Node,
+                        nodes_dict: Dict[str, Node], h_dict,
+                        new_map: np.ndarray, freedom_nodes_np: np.ndarray,
+                        corridor_size: int = 1) -> List[Node] | None:
     corridor: List[Node] = [curr_node]
     goal_h_map: np.ndarray = h_dict[goal_node.xy_name]
 
@@ -499,6 +502,37 @@ def get_freedom_nodes_np(nodes: List[Node], nodes_dict: Dict[str, Node], img_np:
         if is_freedom_node(node, nodes_dict):
             freedom_nodes_np[node.x, node.y] = 1
     return freedom_nodes_np
+
+
+def find_nearest_freedom_node(curr_node: Node, nodes_dict: Dict[str, Node], freedom_nodes_np: np.ndarray) -> Node | None:
+
+    open_list: Deque[Node] = deque([curr_node])
+    open_names_list_heap = [f'{curr_node.xy_name}']
+    heapq.heapify(open_names_list_heap)
+    closed_names_list_heap = []
+    heapq.heapify(closed_names_list_heap)
+
+    iteration = 0
+    while len(open_list) > 0:
+        iteration += 1
+        next_node = open_list.pop()
+        open_names_list_heap.remove(next_node.xy_name)
+        if freedom_nodes_np[next_node.x, next_node.y]:
+            return next_node
+        for nei_name in next_node.neighbours:
+            if nei_name == next_node.xy_name:
+                continue
+            if nei_name in closed_names_list_heap:
+                continue
+            if nei_name in open_names_list_heap:
+                continue
+            nei_node = nodes_dict[nei_name]
+
+            open_list.appendleft(nei_node)
+            heapq.heappush(open_names_list_heap, nei_name)
+        heapq.heappush(closed_names_list_heap, next_node.xy_name)
+
+    return None
 
 
 
