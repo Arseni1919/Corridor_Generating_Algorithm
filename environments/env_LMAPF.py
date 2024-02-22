@@ -158,7 +158,7 @@ class SimEnvLMAPF:
                 agent.unique_moves.append(agent.curr_node)
         # checks
         check_vc_ec_neic(self.agents)
-        # check_if_nei_pos(self.agents) check_if_vc(self.agents) check_if_ec(self.agents)
+
 
     def _get_obs(self) -> dict:
         obs = {agent.name:

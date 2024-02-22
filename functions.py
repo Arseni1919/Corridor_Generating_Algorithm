@@ -199,6 +199,7 @@ def check_actions_if_vc(agents, actions):
 
 
 def check_vc_ec_neic(agents):
+    # check_if_nei_pos(self.agents) check_if_vc(self.agents) check_if_ec(self.agents)
     for a1, a2 in combinations(agents, 2):
         # vertex conf
         assert a1.curr_node != a2.curr_node, f'vertex conf: {a1.name}-{a2.name} in {a1.curr_node.xy_name}'
