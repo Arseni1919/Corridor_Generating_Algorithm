@@ -1,3 +1,5 @@
+import heapq
+
 import numpy as np
 
 from functions import *
@@ -178,6 +180,7 @@ def build_graph_from_np(img_np: np.ndarray, show_map: bool = False) -> Tuple[Lis
 
     for curr_node in nodes:
         curr_node.neighbours.append(curr_node.xy_name)
+        heapq.heapify(curr_node.neighbours)
 
     if show_map:
         plt.imshow(img_np, cmap='gray', origin='lower')

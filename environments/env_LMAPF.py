@@ -159,7 +159,6 @@ class SimEnvLMAPF:
         # checks
         check_vc_ec_neic(self.agents)
 
-
     def _get_obs(self) -> dict:
         obs = {agent.name:
                    AgentTuple(**{
