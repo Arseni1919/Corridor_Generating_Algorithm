@@ -22,7 +22,7 @@ import concurrent.futures
 from pprint import pprint
 from typing import *
 import matplotlib.pyplot as plt
-import matplotlib
+import matplotlib.animation as animation
 # import plotly.graph_objects as go
 # import plotly.express as px
 # import pandas as pd

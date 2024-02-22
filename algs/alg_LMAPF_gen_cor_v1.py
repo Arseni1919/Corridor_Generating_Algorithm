@@ -13,6 +13,7 @@ from algs.alg_a_star_space_time import a_star_xyt
 from environments.env_LMAPF import SimEnvLMAPF
 from alg_gen_cor_v1 import copy_nodes
 from alg_clean_corridor import *
+from create_animation import do_the_animation
 
 
 class AlgAgentLMAPF:
@@ -546,10 +547,10 @@ def main():
     # N = 50
     # N = 100
     # N = 150
-    # N = 200
+    N = 200
     # N = 250
     # N = 300
-    N = 400
+    # N = 400
     # N = 500
     # N = 600
     # N = 620
@@ -561,9 +562,9 @@ def main():
     # img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-10.map'
     # img_dir = 'random-32-32-20.map'
-    # img_dir = 'room-32-32-4.map'
+    img_dir = 'room-32-32-4.map'
     # img_dir = 'maze-32-32-2.map'
-    img_dir = 'maze-32-32-4.map'
+    # img_dir = 'maze-32-32-4.map'
     # img_dir = 'random-64-64-20.map'
     # max_time = 20
     # max_time = 100
@@ -625,25 +626,27 @@ def main():
             break
 
     # if to_render:
-    plt.show()
-    plt.close()
-    fig, ax = plt.subplots(1, 2, figsize=(14, 7))
-    plot_info = {
-        'i': max_time, 'iterations': max_time, 'img_dir': img_dir, 'img_np': env.img_np,
-        'n_agents': env.n_agents, 'agents': env.agents,
-        'total_unique_moves_list': total_unique_moves_list,
-        'total_finished_goals_list': total_finished_goals_list,
-    }
-    plot_step_in_env(ax[0], plot_info)
-    plot_total_finished_goals(ax[1], plot_info)
-    # plot_unique_movements(ax[1], plot_info)
-    plt.show()
+    do_the_animation(info={'img_dir': img_dir, 'img_np': env.img_np, 'agents': alg.agents, 'max_time': max_time})
     print(f'finished run')
 
 
 if __name__ == '__main__':
     main()
 
+
+# plt.show()
+# plt.close()
+# fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+# plot_info = {
+#     'i': max_time, 'iterations': max_time, 'img_dir': img_dir, 'img_np': env.img_np,
+#     'n_agents': env.n_agents, 'agents': env.agents,
+#     'total_unique_moves_list': total_unique_moves_list,
+#     'total_finished_goals_list': total_finished_goals_list,
+# }
+# plot_step_in_env(ax[0], plot_info)
+# plot_total_finished_goals(ax[1], plot_info)
+# # plot_unique_movements(ax[1], plot_info)
+# plt.show()
 
 
 
