@@ -122,7 +122,7 @@ class SimEnvLMAPF:
         curr_agent.next_goal_node = next_goal_node
 
         # if curr_agent.num != 0:
-        #     curr_agent.next_goal_node = curr_agent.start_node
+        #     curr_agent.next_goal_node = curr_agent.curr_node
 
     def _update_goals(self):
         for agent in self.agents:

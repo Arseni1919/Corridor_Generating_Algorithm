@@ -1,3 +1,4 @@
+import heapq
 import random
 
 import matplotlib.pyplot as plt
@@ -123,6 +124,8 @@ class ALgLMAPFGenCor:
             agent.prev_node = agent.curr_node
             agent.curr_node = self.nodes_dict[obs_agent.curr_node_name]
             agent.next_goal_node = self.nodes_dict[obs_agent.next_goal_node_name]
+            # if agent.num != 0:
+            #     agent.next_goal_node = self.nodes_dict[obs_agent.curr_node_name]
             agent.arrived = obs_agent.arrived
 
     def _update_global_order(self):
@@ -310,6 +313,7 @@ class ALgLMAPFGenCor:
         print(f'\r[{p_counter}][{agent.name}] _plan_for_agent', end='')
         node_name_to_f_agent_dict = {f_agent.curr_node.xy_name: f_agent for f_agent in flex_agents}
         node_name_to_f_agent_heap = list(node_name_to_f_agent_dict.keys())
+        heapq.heapify(node_name_to_f_agent_heap)
         # create a relevant map where the planned agents are considered as walls
         new_map: np.ndarray = create_new_map(self.img_np, planned_agents, self.next_iteration)
         assert new_map[agent.curr_node.x, agent.curr_node.y] == 1
@@ -473,7 +477,8 @@ class ALgLMAPFGenCor:
             # create a corridor to agent's goal in the given map to the max length straight through descending h-values
             corridor = calc_smart_corridor(curr_node, i_goal_node,
                                            self.nodes_dict, self.h_dict,
-                                           new_map, self.freedom_nodes_np, self.corridor_size)
+                                           new_map, self.freedom_nodes_np, self.corridor_size,
+                                           node_name_to_f_agent_dict, node_name_to_f_agent_heap)
             # corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
             # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
 
@@ -534,23 +539,23 @@ class ALgLMAPFGenCor:
 
 @use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
 def main():
-    # set_seed(random_seed_bool=False, seed=7877)
+    set_seed(random_seed_bool=False, seed=7310)
     # set_seed(random_seed_bool=False, seed=123)
-    set_seed(random_seed_bool=True)
+    # set_seed(random_seed_bool=True)
     # N = 50
     # N = 100
     # N = 150
     # N = 200
     # N = 250
-    N = 300
-    # N = 400
+    # N = 300
+    N = 400
     # N = 500
     # N = 600
     # N = 620
     # N = 700
     # N = 750
     # N = 850
-    N = 900
+    # N = 900
     # img_dir = '10_10_my_rand.map'
     img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-10.map'

@@ -197,7 +197,6 @@ def create_new_map(img_np: np.ndarray, planned_agents: list, next_iteration: int
 
 def get_agents_in_corridor(corridor: List[Node], node_name_to_f_agent_dict, node_name_to_f_agent_heap) -> list:
     agents_in_corridor = []
-    heapq.heapify(node_name_to_f_agent_heap)
     for n in corridor:
         if n.xy_name in node_name_to_f_agent_heap:
             agents_in_corridor.append(node_name_to_f_agent_dict[n.xy_name])
@@ -409,7 +408,9 @@ def calc_simple_corridor(agent, nodes_dict: Dict[str, Node], h_dict, corridor_si
 def calc_smart_corridor(curr_node: Node, goal_node: Node,
                         nodes_dict: Dict[str, Node], h_dict,
                         new_map: np.ndarray, freedom_nodes_np: np.ndarray,
-                        corridor_size: int = 1) -> List[Node] | None:
+                        corridor_size: int = 1,
+                        node_name_to_f_agent_dict: Dict[str, Any] = None,
+                        node_name_to_f_agent_heap: List[str] = None) -> List[Node] | None:
     corridor: List[Node] = [curr_node]
     goal_h_map: np.ndarray = h_dict[goal_node.xy_name]
 
@@ -434,8 +435,13 @@ def calc_smart_corridor(curr_node: Node, goal_node: Node,
         min_nodes: List[Node] = list(filter(lambda n: new_map[n.x, n.y] != 0, min_nodes))
         if len(min_nodes) == 0:
             return corridor
-        random.shuffle(min_nodes)
-        min_node = min_nodes[0]
+        min_nodes_empty: List[Node] = list(filter(lambda n: n.xy_name not in node_name_to_f_agent_heap, min_nodes))
+        if len(min_nodes_empty) != 0:
+            random.shuffle(min_nodes_empty)
+            min_node = min_nodes_empty[0]
+        else:
+            random.shuffle(min_nodes)
+            min_node = min_nodes[0]
         corridor.append(min_node)
         if min_node == goal_node:
             return corridor
