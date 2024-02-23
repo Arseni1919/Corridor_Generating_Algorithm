@@ -26,6 +26,7 @@ class AlgAgentLMAPF:
         self.next_node: Node = start_node
         self.next_goal_node: Node = next_goal_node
         self.path: List[Node] = [start_node]
+        self.goals_per_iter_list: List[Node] = [next_goal_node]
         self.arrived: bool = False
 
     @property
@@ -128,6 +129,7 @@ class ALgLMAPFGenCor:
             # if agent.num != 0:
             #     agent.next_goal_node = self.nodes_dict[obs_agent.curr_node_name]
             agent.arrived = obs_agent.arrived
+            agent.goals_per_iter_list.append(agent.next_goal_node)
 
     def _update_global_order(self):
         unfinished_agents, finished_agents = [], []
@@ -211,7 +213,8 @@ class ALgLMAPFGenCor:
                     for cap_agent in captured_agents:
                         assert cap_agent.curr_node == cap_agent.path[self.next_iteration - 1]
                         assert len(cap_agent.path[self.next_iteration:]) > 0
-                        assert cap_agent.path[self.next_iteration].xy_name in cap_agent.path[self.next_iteration - 1].neighbours
+                        assert cap_agent.path[self.next_iteration].xy_name in cap_agent.path[
+                            self.next_iteration - 1].neighbours
                     assert agent not in captured_agents
 
                 planned_agents.append(agent)
@@ -262,7 +265,8 @@ class ALgLMAPFGenCor:
         # check_vc_ec_neic_iter(self.agents, self.next_iteration)
         # --------------------------- #
 
-    def _plan_for_agent(self, agent: AlgAgentLMAPF, planned_agents: List[AlgAgentLMAPF], flex_agents: List[AlgAgentLMAPF], p_counter: int) -> Tuple[bool, List[AlgAgentLMAPF]]:
+    def _plan_for_agent(self, agent: AlgAgentLMAPF, planned_agents: List[AlgAgentLMAPF],
+                        flex_agents: List[AlgAgentLMAPF], p_counter: int) -> Tuple[bool, List[AlgAgentLMAPF]]:
         """
         v- create a relevant map where the planned agents are considered as walls
         - check
@@ -406,7 +410,9 @@ class ALgLMAPFGenCor:
         return True, captured_agents
 
     def _get_corridor_and_tubes(self, curr_node: Node, goal_node: Node, new_map: np.ndarray,
-                                node_name_to_f_agent_dict: Dict[str, AlgAgentLMAPF], node_name_to_f_agent_heap: List[str]) -> Tuple[List[Node], List[AlgAgentLMAPF], List[Tube]]:
+                                node_name_to_f_agent_dict: Dict[str, AlgAgentLMAPF],
+                                node_name_to_f_agent_heap: List[str]) -> Tuple[
+        List[Node], List[AlgAgentLMAPF], List[Tube]]:
         """
         :return: corridor, c_agents, tubes
         """
@@ -476,8 +482,10 @@ class ALgLMAPFGenCor:
 
         # ------------------------- #
 
-    def _old_get_corridor_and_tubes(self, curr_node: Node, goal_node: Node, new_map: np.ndarray, node_name_to_f_agent_dict: Dict[str, AlgAgentLMAPF], node_name_to_f_agent_heap: List[str]) -> Tuple[List[Node], List[AlgAgentLMAPF], List[Tube]]:
-
+    def _old_get_corridor_and_tubes(self, curr_node: Node, goal_node: Node, new_map: np.ndarray,
+                                    node_name_to_f_agent_dict: Dict[str, AlgAgentLMAPF],
+                                    node_name_to_f_agent_heap: List[str]) -> Tuple[
+        List[Node], List[AlgAgentLMAPF], List[Tube]]:
 
         # ------------------------- #
         # # create a corridor to agent's goal in the given map to the max length straight through descending h-values
@@ -546,12 +554,12 @@ def main():
     # set_seed(random_seed_bool=True)
     # N = 50
     # N = 100
-    # N = 150
+    N = 150
     # N = 200
     # N = 250
     # N = 300
     # N = 400
-    N = 500
+    # N = 500
     # N = 600
     # N = 620
     # N = 700
@@ -564,11 +572,11 @@ def main():
     # img_dir = 'random-32-32-20.map'
     # img_dir = 'room-32-32-4.map'
     # img_dir = 'maze-32-32-2.map'
-    # img_dir = 'maze-32-32-4.map'
-    img_dir = 'random-64-64-20.map'
-    max_time = 20
+    img_dir = 'maze-32-32-4.map'
+    # img_dir = 'random-64-64-20.map'
+    # max_time = 20
     # max_time = 100
-    # max_time = 200
+    max_time = 200
     # corridor_size = 20
     # corridor_size = 10
     # corridor_size = 5
@@ -609,14 +617,9 @@ def main():
         total_finished_goals_list.append(metrics['total_finished_goals'])
         if to_render:
             i_agent = alg.global_order[0]
-            plot_info = {
-                'i': i_step, 'iterations': max_time, 'img_dir': img_dir, 'img_np': alg.img_np,
-                'n_agents': env.n_agents, 'agents': alg.agents,
-                'total_unique_moves_list': total_unique_moves_list,
-                'total_finished_goals_list': total_finished_goals_list,
-                'i_agent': i_agent,
-                'corridor': i_agent.path[i_step:]
-            }
+            plot_info = {'i': i_step, 'iterations': max_time, 'img_dir': img_dir, 'img_np': alg.img_np,
+                         'n_agents': env.n_agents, 'agents': alg.agents, 'total_unique_moves_list': total_unique_moves_list,
+                         'total_finished_goals_list': total_finished_goals_list, 'i_agent': i_agent, 'corridor': i_agent.path[i_step:]}
             plot_step_in_env(ax[0], plot_info)
             plot_total_finished_goals(ax[1], plot_info)
             # plot_unique_movements(ax[1], plot_info)
@@ -626,29 +629,21 @@ def main():
             break
 
     # if to_render:
+    plt.close()
+    fig, ax = plt.subplots(1, 2, figsize=(14, 7))
+    plot_info = {'i': max_time, 'iterations': max_time, 'img_dir': img_dir, 'img_np': env.img_np,
+                 'n_agents': env.n_agents, 'agents': env.agents, 'total_unique_moves_list': total_unique_moves_list,
+                 'total_finished_goals_list': total_finished_goals_list, }
+    plot_step_in_env(ax[0], plot_info)
+    plot_total_finished_goals(ax[1], plot_info)
+    # plot_unique_movements(ax[1], plot_info)
+    plt.show()
     do_the_animation(info={'img_dir': img_dir, 'img_np': env.img_np, 'agents': alg.agents, 'max_time': max_time})
     print(f'finished run')
 
 
 if __name__ == '__main__':
     main()
-
-
-# plt.show()
-# plt.close()
-# fig, ax = plt.subplots(1, 2, figsize=(14, 7))
-# plot_info = {
-#     'i': max_time, 'iterations': max_time, 'img_dir': img_dir, 'img_np': env.img_np,
-#     'n_agents': env.n_agents, 'agents': env.agents,
-#     'total_unique_moves_list': total_unique_moves_list,
-#     'total_finished_goals_list': total_finished_goals_list,
-# }
-# plot_step_in_env(ax[0], plot_info)
-# plot_total_finished_goals(ax[1], plot_info)
-# # plot_unique_movements(ax[1], plot_info)
-# plt.show()
-
-
 
 # # move others out of the corridor
 # succeeded, cc_paths_dict = clean_corridor(
@@ -678,6 +673,3 @@ if __name__ == '__main__':
 # plot_info = {'img_np': new_map, 'agents': agents_to_plot}
 # plot_step_in_env(ax[0], plot_info)
 # plt.show()
-
-
-

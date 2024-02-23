@@ -23,6 +23,9 @@ def do_the_animation(info):
     scat1 = ax.scatter(others_y_list, others_x_list, s=100, c='k')
     scat2 = ax.scatter(others_y_list, others_x_list, s=50, c=np.array(others_cm_list))
 
+    goal_scat1 = ax.scatter([i_agent.goals_per_iter_list[0].y], [i_agent.goals_per_iter_list[0].x], s=200, c='white', marker='X')
+    goal_scat2 = ax.scatter([i_agent.goals_per_iter_list[0].y], [i_agent.goals_per_iter_list[0].x], s=100, c='red', marker='X')
+
     agent_scat1 = ax.scatter([i_agent.start_node.y], [i_agent.start_node.x], s=120, c='w')
     agent_scat2 = ax.scatter([i_agent.start_node.y], [i_agent.start_node.x], s=70, c='r')
 
@@ -43,8 +46,14 @@ def do_the_animation(info):
         agent_scat1.set_offsets(data)
         agent_scat2.set_offsets(data)
 
-        return scat1, scat2
+        fr_i_goal = i_agent.goals_per_iter_list[frame]
+        data = np.stack([[fr_i_goal.y], [fr_i_goal.x]]).T
+        goal_scat1.set_offsets(data)
+        goal_scat2.set_offsets(data)
+
+        return scat1, scat2, agent_scat1, agent_scat2, goal_scat1, goal_scat2
+
     ani = animation.FuncAnimation(fig=fig, func=update, frames=max_time, interval=250)
-    ani.save(filename=f"../videos/{n_agents}_agents_in_{img_dir[:-4]}.mp4", writer="ffmpeg")
+    ani.save(filename=f"../videos/{n_agents}_agents_in_{img_dir[:-4]}_for_{max_time}_steps.mp4", writer="ffmpeg")
     plt.show()
 
