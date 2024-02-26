@@ -138,6 +138,29 @@ def plot_total_finished_goals(ax, info):
     # set_legend(ax, size=12)
 
 
+def plot_temp_a_star(ax, info):
+    ax.cla()
+    img_np = info['img_np']
+    path = info['path']
+
+    field = img_np * -1
+    for n in path:
+        field[n.x, n.y] = 3
+
+    if 'open_list' in info:
+        open_list = info['open_list']
+        for _, n in open_list:
+            field[n.x, n.y] = 1
+
+    if 'closed_list' in info:
+        closed_list = info['closed_list']
+        for _, n in closed_list:
+            field[n.x, n.y] = -2
+
+    ax.imshow(field, origin='lower')
+    ax.set_title(f'Temporal A*')
+
+
 def plot_flow_in_env(ax, info):
     ax.cla()
     img_np = info['img_np']
