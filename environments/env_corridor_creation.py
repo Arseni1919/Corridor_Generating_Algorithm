@@ -3,7 +3,7 @@ import random
 from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
-from algs.alg_a_star_space_time import a_star_xyt
+from algs.old_alg_a_star_space_time import a_star_xyt
 
 
 class SimAgentCC:

@@ -3,7 +3,6 @@ from collections import deque
 from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
-from algs.alg_a_star_space_time import a_star_xyt
 from environments.env_corridor_creation import SimEnvCC, get_random_corridor
 
 

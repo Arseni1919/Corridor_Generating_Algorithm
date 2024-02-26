@@ -204,13 +204,8 @@ def get_agents_in_corridor(corridor: List[Node], node_name_to_f_agent_dict, node
 
 
 def get_tube(
-        c_agent,
-        new_map: np.ndarray,
-        tubes: List[Tube],
-        corridor_for_c_agents: List[Node],
-        nodes_dict: Dict[str, Node],
-        node_name_to_f_agent_heap: list,
-        to_assert: bool,
+        c_agent, new_map: np.ndarray, tubes: List[Tube], corridor_for_c_agents: List[Node],
+        nodes_dict: Dict[str, Node], node_name_to_f_agent_heap: list, to_assert: bool,
 ) -> Tuple[bool, Tube | None]:
     """
     - get a list of captured_free_nodes that are already taken by other agents
@@ -409,7 +404,6 @@ def calc_smart_corridor(curr_node: Node, goal_node: Node,
                         nodes_dict: Dict[str, Node], h_dict,
                         new_map: np.ndarray, freedom_nodes_np: np.ndarray,
                         corridor_size: int = 1,
-                        node_name_to_f_agent_dict: Dict[str, Any] = None,
                         node_name_to_f_agent_heap: List[str] = None) -> List[Node] | None:
     corridor: List[Node] = [curr_node]
     goal_h_map: np.ndarray = h_dict[goal_node.xy_name]

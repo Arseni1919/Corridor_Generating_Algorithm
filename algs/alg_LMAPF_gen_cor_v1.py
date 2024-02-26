@@ -9,7 +9,6 @@ import numpy as np
 from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
-from algs.alg_a_star_space_time import a_star_xyt
 from environments.env_LMAPF import SimEnvLMAPF
 from alg_gen_cor_v1 import copy_nodes
 from alg_clean_corridor import *
@@ -145,16 +144,12 @@ class ALgLMAPFGenCor:
         """
         for each agent:
             - if there have future steps in the path -> continue
-            - check
             # if you here, that means you don't have any future moves
             - create your path while moving others out of your way (already created paths are walls for you)
             - if you succeeded, add yourself and those agents, that you affected, to the list of already created paths
-            - check
             - if you didn't succeed to create a path -> be flexible for others
-            - check
         for each agent:
             - if you still have no path (you didn't create it for yourself and others didn't do it for you) then stay at place for the next move
-            - check
         :return:
         """
         print(f'\n[{self.next_iteration}][{self.global_order.index(self.agents_dict['agent_0'])}] _calc_next_steps')
@@ -269,45 +264,26 @@ class ALgLMAPFGenCor:
                         flex_agents: List[AlgAgentLMAPF], p_counter: int) -> Tuple[bool, List[AlgAgentLMAPF]]:
         """
         v- create a relevant map where the planned agents are considered as walls
-        - check
         v- create a corridor to agent's goal in the given map to the max length straight through descending h-values
-        - check
         v- if a corridor just a single node (that means it only contains the current location), then return False
-        - check
         v # if you are here that means the corridor is of the length of 2 or higher
-        - check
         v- check if there are any agents inside the corridor
-        - check
         v- if there are no agents inside the corridor, then update agent's path and return True with []
-        - check
         v # if you are here that means there are other agents inside the corridor (lets call them c_agents)
-        - check
         v- let's define a list of tubes that will include the free nodes that those c_agents will potentially capture
         for c_agent in c_agents:
             v- try to create a tube + free_node for c_agent (a new free_node must be different from other free_nodes)
-            - check
             v- if there is no tube, then return False
-            - check
             v- tubes <- tube, free_node
-            - check
-        - check
         v # if you are here that means all c_agents found their tubes, and we are ready to move things
-        - check
         v # up until now no one moved
-        - check
         v- let's define captured_agents to be the list of all agents that we will move in addition to the main agent
-        - check
         for tube in tubes:
-            - check
             v- let's call all agents in the tube as t_agents
-            - check
             v- move all t_agents forward such that the free node will be occupied, the last node will be free
                and the rest of the nodes inside a tube will remain state the same state
-            - check
             v- add t_agents to the captured_agents
-            - check
         v- finally, let's move the main agent through the corridor
-        - check
         return True and captured_agents
 
         :param agent:
@@ -421,10 +397,8 @@ class ALgLMAPFGenCor:
         for i_try in range(2):
             new_map[curr_node.x, curr_node.y] = 1
             # create a corridor to agent's goal in the given map to the max length straight through descending h-values
-            corridor = calc_smart_corridor(curr_node, i_goal_node,
-                                           self.nodes_dict, self.h_dict,
-                                           new_map, self.freedom_nodes_np, self.corridor_size,
-                                           node_name_to_f_agent_dict, node_name_to_f_agent_heap)
+            corridor = calc_smart_corridor(curr_node, i_goal_node,  self.nodes_dict, self.h_dict, new_map,
+                                           self.freedom_nodes_np, self.corridor_size, node_name_to_f_agent_heap)
             # corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
             # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
 
@@ -435,10 +409,11 @@ class ALgLMAPFGenCor:
                 return corridor, [], []
 
             # if you are here that means the corridor is of the length of 2 or higher
-            assert len(corridor) >= 2
-            assert corridor[0] == curr_node  # the first node is agent's current location
-            for n in corridor:
-                assert new_map[n.x, n.y]
+            if self.to_assert:
+                assert len(corridor) >= 2
+                assert corridor[0] == curr_node  # the first node is agent's current location
+                for n in corridor:
+                    assert new_map[n.x, n.y]
 
             # check if there are any agents inside the corridor
             c_agents: List[AlgAgentLMAPF] = get_agents_in_corridor(corridor, node_name_to_f_agent_dict,
@@ -574,9 +549,9 @@ def main():
     # img_dir = 'maze-32-32-2.map'
     img_dir = 'maze-32-32-4.map'
     # img_dir = 'random-64-64-20.map'
-    # max_time = 20
+    max_time = 20
     # max_time = 100
-    max_time = 200
+    # max_time = 200
     # corridor_size = 20
     # corridor_size = 10
     # corridor_size = 5
