@@ -613,7 +613,8 @@ def main():
     plot_total_finished_goals(ax[1], plot_info)
     # plot_unique_movements(ax[1], plot_info)
     plt.show()
-    do_the_animation(info={'img_dir': img_dir, 'img_np': env.img_np, 'agents': alg.agents, 'max_time': max_time})
+    do_the_animation(info={'img_dir': img_dir, 'img_np': env.img_np, 'agents': alg.agents, 'max_time': max_time},
+                     to_save=False)
     print(f'finished run')
 
 

@@ -1,7 +1,7 @@
 from functions import *
 
 
-def do_the_animation(info):
+def do_the_animation(info, to_save=False):
     img_np = info['img_np']
     agents = info['agents']
     max_time = info['max_time']
@@ -55,6 +55,7 @@ def do_the_animation(info):
         return scat1, scat2, agent_scat1, agent_scat2, goal_scat1, goal_scat2
 
     ani = animation.FuncAnimation(fig=fig, func=update, frames=max_time, interval=250)
-    ani.save(filename=f"../videos/{n_agents}_agents_in_{img_dir[:-4]}_for_{max_time}_steps.mp4", writer="ffmpeg")
+    if to_save:
+        ani.save(filename=f"../videos/{n_agents}_agents_in_{img_dir[:-4]}_for_{max_time}_steps.mp4", writer="ffmpeg")
     plt.show()
 
