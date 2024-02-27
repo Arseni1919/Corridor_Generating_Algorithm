@@ -24,8 +24,10 @@ def main():
     # set_seed(random_seed_bool=True)
     # ---------------------------------------------------- #
     # n_agents_list = [50, 100, 150, 200, 250, 300, 350, 400]
-    n_agents_list = [100, 200, 300, 400, 500, 600]
+    # n_agents_list = [100, 200, 300, 400, 500, 600]
+    n_agents_list = [500, 600, 700, 800, 900, 1000]
     # n_agents_list = [100, 200]
+    # n_agents_list = [1000]
     # ---------------------------------------------------- #
     # runs_per_n_agents = 5
     # runs_per_n_agents = 15
@@ -35,20 +37,18 @@ def main():
     # ---------------------------------------------------- #
     time_to_think_limit = 5
     # ---------------------------------------------------- #
-    # img_dir = '10_10_my_rand.map'
-    # img_dir = 'empty-32-32.map'
-    # img_dir = 'random-32-32-10.map'
+    img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-20.map'
-    img_dir = 'room-32-32-4.map'
-    # img_dir = 'maze-32-32-2.map'
     # img_dir = 'maze-32-32-4.map'
+    # img_dir = 'room-32-32-4.map'
+
+    # img_dir = '10_10_my_rand.map'
+    # img_dir = 'random-32-32-10.map'
+    # img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
     # ---------------------------------------------------- #
     to_save_results = True
     # to_save_results = False
-    # ---------------------------------------------------- #
-    middle_plot = True
-    # middle_plot=False
     # ---------------------------------------------------- #
     to_check_collisions = False
     # to_check_collisions = True
@@ -69,6 +69,9 @@ def main():
     logs_dict['img_dir'] = img_dir
     logs_dict['time_to_think_limit'] = time_to_think_limit
     # ---------------------------------------------------- #
+    # middle_plot = True
+    middle_plot=False
+    # ---------------------------------------------------- #
     if middle_plot:
         fig, ax = plt.subplots(1, 3, figsize=(14, 4))
     # ---------------------------------------------------- #
@@ -81,6 +84,9 @@ def main():
                       to_check_collisions=to_check_collisions)
 
     for n_agents in n_agents_list:
+
+        # init failed count
+        pass
 
         for i_run in range(runs_per_n_agents):
 
@@ -107,10 +113,10 @@ def main():
                     logs_dict[alg.name][f'{n_agents}']['expanded_nodes'].append(alg.logs['expanded_nodes'])
                     logs_dict[alg.name][f'{n_agents}']['sq'].append(len(alg.agents_dict['agent_0'].path))
 
+                print(f'\n=============================================')
+                print(f'{n_agents=}, {i_run=}, {algorithm.name}')
+                print(f'=============================================')
                 if middle_plot:
-                    print(f'\n=============================================')
-                    print(f'{n_agents=}, {i_run=}, {algorithm.name}')
-                    print(f'=============================================')
                     plot_sr(ax[0], logs_dict)
                     # plot_time_metric_cactus(ax[1], logs_dict)
                     plot_sq_metric_cactus(ax[1], logs_dict)

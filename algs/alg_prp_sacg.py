@@ -174,12 +174,14 @@ class ALgSACGPrP:
         self.logs['expanded_nodes'] += len(info['open_list']) + len(info['closed_list'])
         main_agent.path = path
         planned_agents = [main_agent]
+        pa_heap: List[int] = [main_agent.num]
+        heapq.heapify(pa_heap)
         captured_nodes: List[str] = []
         heapq.heapify(captured_nodes)
         while len(planned_agents) != len(self.agents):
             print(f'\rtry: {tries}, {len(planned_agents)=}', end='')
             update_captured_nodes(planned_agents, captured_nodes)
-            unplanned_agents = [a for a in self.agents if a not in planned_agents]
+            unplanned_agents = [a for a in self.agents if a.num not in pa_heap]
             new_agents_in_captured_nodes = list(
                 filter(lambda a: a.curr_node.xy_name in captured_nodes, unplanned_agents))
             # plan for the first agent from new_agents_in_captured_nodes
@@ -195,6 +197,7 @@ class ALgSACGPrP:
                     return False
                 next_agent.path = next_path
                 planned_agents.append(next_agent)
+                heapq.heappush(pa_heap, next_agent.num)
                 # check_paths(planned_agents, 0)
                 continue
 
@@ -202,6 +205,7 @@ class ALgSACGPrP:
             next_agent = unplanned_agents[0]
             next_agent.path = [next_agent.curr_node]
             planned_agents.append(next_agent)
+            heapq.heappush(pa_heap, next_agent.num)
             # check_paths(planned_agents, 0)
 
         fill_paths(self.agents)

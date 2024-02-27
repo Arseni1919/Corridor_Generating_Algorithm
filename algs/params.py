@@ -12,7 +12,7 @@ def params_for_SACG():
     # N = 250
     # N = 300
     # N = 400
-    N = 450
+    # N = 450
     # N = 500
     # N = 600
     # N = 620
@@ -20,11 +20,12 @@ def params_for_SACG():
     # N = 750
     # N = 850
     # N = 900
+    N = 1000
     # img_dir = '10_10_my_rand.map'
-    # img_dir = 'empty-32-32.map'
+    img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-10.map'
     # img_dir = 'random-32-32-20.map'
-    img_dir = 'room-32-32-4.map'
+    # img_dir = 'room-32-32-4.map'
     # img_dir = 'maze-32-32-2.map'
     # img_dir = 'maze-32-32-4.map'
     # img_dir = 'random-64-64-20.map'
