@@ -545,9 +545,9 @@ class ALgCGA:
 @use_profiler(save_dir='../stats/alg_CGA.pstat')
 def main():
     # SACG
-    N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_SACG()
+    # N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_SACG()
     # LMAPF
-    # N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_LMAPF()
+    N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_LMAPF()
 
     # problem creation
     env = SimEnvLMAPF(img_dir=img_dir, is_sacg=is_sacg)
