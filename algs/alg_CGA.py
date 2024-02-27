@@ -542,7 +542,7 @@ class ALgCGA:
         pass
 
 
-@use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
+@use_profiler(save_dir='../stats/alg_CGA.pstat')
 def main():
     # SACG
     N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_SACG()

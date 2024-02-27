@@ -61,10 +61,10 @@ def params_for_LMAPF():
     # set_seed(random_seed_bool=False, seed=123)
     # set_seed(random_seed_bool=True)
     # N = 50
-    N = 100
+    # N = 100
     # N = 150
     # N = 200
-    # N = 250
+    N = 250
     # N = 300
     # N = 400
     # N = 500
@@ -74,17 +74,18 @@ def params_for_LMAPF():
     # N = 750
     # N = 850
     # N = 900
-    # img_dir = '10_10_my_rand.map'
     # img_dir = 'empty-32-32.map'
-    # img_dir = 'random-32-32-10.map'
-    # img_dir = 'random-32-32-20.map'
+    img_dir = 'random-32-32-20.map'
+    # img_dir = 'maze-32-32-4.map'
     # img_dir = 'room-32-32-4.map'
+
+    # img_dir = '10_10_my_rand.map'
+    # img_dir = 'random-32-32-10.map'
     # img_dir = 'maze-32-32-2.map'
-    img_dir = 'maze-32-32-4.map'
     # img_dir = 'random-64-64-20.map'
     # max_time = 20
-    # max_time = 100
-    max_time = 200
+    max_time = 100
+    # max_time = 200
     # max_time = 1000
     # corridor_size = 20
     # corridor_size = 10

@@ -213,7 +213,7 @@ class ALgPrPSACG:
         return True
 
 
-@use_profiler(save_dir='../stats/alg_prp_sacg.pstat')
+@use_profiler(save_dir='../stats/alg_SACG_PrP.pstat')
 def main():
     N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_SACG()
     # problem creation

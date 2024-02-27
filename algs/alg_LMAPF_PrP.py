@@ -1,3 +1,5 @@
+import heapq
+
 from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
@@ -5,6 +7,12 @@ from algs.alg_temporal_a_star import calc_temporal_a_star, create_constraints
 from environments.env_LMAPF import SimEnvLMAPF
 from create_animation import do_the_animation
 from algs.params import *
+
+
+def fill_paths(agents, from_iter, max_path_len):
+    for agent in agents:
+        while len(agent.path[from_iter:]) < max_path_len:
+            agent.path.append(agent.path[-1])
 
 
 class AgentPrPLMAPF:
@@ -59,42 +67,6 @@ class AgentPrPLMAPF:
         self.nei_paths_dict[nei_agent.name] = nei_agent.path
         self.nei_h_dict[nei_agent.name] = nei_agent.heuristic_value
         self.nei_num_dict[nei_agent.name] = nei_agent.num
-
-    def execute_a_star(self, goal=None, nodes=None, nodes_dict=None, sub_results=None):
-        if goal is None:
-            goal = self.next_goal_node
-        if nodes is None or nodes_dict is None:
-            nodes, nodes_dict = self.nodes, self.nodes_dict
-        # v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = self._create_constraints(h_agents)
-        paths = list(sub_results.values())
-        vc_np, ec_np, pc_np = create_constraints(paths, self.map_dim)
-        new_plan, a_s_info = calc_temporal_a_star(curr_node=self.curr_node, goal_node=goal,
-                                                  nodes_dict=nodes_dict, h_dict=self.h_dict,
-                                                  max_len=self.w + 1,
-                                                  vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
-        if new_plan:
-            # pop out the current location, because you will order to move to the next location
-            self.plan_succeeded = True
-            new_plan.pop(0)
-            self.plan = new_plan
-            self.fulfill_the_plan()
-        else:
-            # self.plan = None
-            # IStay
-            self.set_istay()
-
-    def fulfill_the_plan(self):
-        if len(self.plan) == 0:
-            self.plan = [self.curr_node]
-        if self.h and self.h < 1000:
-            while len(self.plan) < self.h:
-                self.plan.append(self.plan[-1])
-
-    def set_istay(self):
-        self.plan = [self.curr_node]
-        self.fulfill_the_plan()
-        self.plan_succeeded = False
-        # print(f' \r\t --- [{self.name}]: I stay!', end='')
 
 
 class AlgPrPLMAPF:
@@ -175,10 +147,59 @@ class AlgPrPLMAPF:
                 agent2.add_nei(agent1)
 
     def _build_plan(self) -> None:
+        if self.next_iteration > 1 and self.next_iteration % self.h != 0:
+            return
+        self._reshuffle_agents()
 
+        # clean first
         for agent in self.agents:
-            agent.path.append(agent.path[-1])
+            agent.path = agent.path[:self.next_iteration]
+
+        planned_agents = []
+        unplanned_agents = []
+        for agent in self.agents:
+            paths = [a.path[max(0, self.next_iteration-1):] for a in planned_agents]
+            vc_np, ec_np, pc_np = create_constraints(paths, self.map_dim)
+            future_path, info = calc_temporal_a_star(
+                curr_node=agent.curr_node, goal_node=agent.next_goal_node,
+                nodes_dict=self.nodes_dict, h_dict=self.h_dict, max_len=self.h,
+                vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
+            agent.path.extend(future_path[1:])
+            if len(future_path) > 1:
+                planned_agents.append(agent)
+                fill_paths([agent], max(0, self.next_iteration - 1), self.h + 1)
+            else:
+                unplanned_agents.append(agent)
+
         # IStay
+        there_is_a_conf = True
+        from_iter = max(0, self.next_iteration-1)
+        agents_i_stay = []
+        heapq.heapify(agents_i_stay)
+        i_stay_iters = 0
+        while there_is_a_conf:
+            i_stay_iters += 1
+            print(f'\r{i_stay_iters=}', end='')
+            there_is_a_conf = False
+            for agent1, agent2 in combinations(self.agents, 2):
+                if agent1.name not in agent2.nei_dict:
+                    continue
+                if agent1.num in agents_i_stay and agent2.num in agents_i_stay:
+                    continue
+                if not two_plans_have_no_confs(agent1.path[from_iter:], agent2.path[from_iter:]):
+                    agent1.path = agent1.path[:self.next_iteration]
+                    agent1.path.append(agent1.path[-1])
+                    agent2.path = agent2.path[:self.next_iteration]
+                    agent2.path.append(agent2.path[-1])
+                    fill_paths([agent1, agent2], max(0, self.next_iteration - 1), self.h + 1)
+                    if agent1.num not in agents_i_stay:
+                        heapq.heappush(agents_i_stay, agent1.num)
+                    if agent2.num not in agents_i_stay:
+                        heapq.heappush(agents_i_stay, agent2.num)
+                    there_is_a_conf = True
+                    break
+        # for agent in self.agents:
+        #     assert len(agent.path[self.next_iteration - 1:]) == self.h + 1
         # self._implement_istay()
 
     def _reshuffle_agents(self):
@@ -194,44 +215,8 @@ class AlgPrPLMAPF:
         stuck_agents.extend(good_agents)
         self.agents = stuck_agents
 
-    def _implement_istay(self):
-        # IStay
-        there_is_conf = True
-        # pairs_list = list(combinations(self.agents, 2))
-        standing_agents = set()
-        while there_is_conf:
-            there_is_conf = False
-            for agent1, agent2 in combinations(self.agents, 2):
-                if agent1.name not in agent2.nei_dict:
-                    continue
-                if agent1.name in standing_agents:
-                    if agent2.name in standing_agents:
-                        continue
-                    if not plan_has_no_conf_with_vertex(agent2.plan, agent1.curr_node):
-                        there_is_conf = True
-                        agent2.set_istay()
-                        standing_agents.add(agent2.name)
-                        break
-                    else:
-                        continue
-                if agent2.name in standing_agents:
-                    if not plan_has_no_conf_with_vertex(agent1.plan, agent2.curr_node):
-                        there_is_conf = True
-                        agent1.set_istay()
-                        standing_agents.add(agent1.name)
-                        break
-                    else:
-                        continue
-                if not two_plans_have_no_confs(agent1.plan, agent2.plan):
-                    there_is_conf = True
-                    agent1.set_istay()
-                    agent2.set_istay()
-                    standing_agents.add(agent1.name)
-                    standing_agents.add(agent2.name)
-                    break
 
-
-@use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
+@use_profiler(save_dir='../stats/alg_LMAPF_PrP.pstat')
 def main():
      # LMAPF
     N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_LMAPF()
