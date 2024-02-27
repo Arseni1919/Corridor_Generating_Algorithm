@@ -13,6 +13,7 @@ from environments.env_LMAPF import SimEnvLMAPF
 from alg_gen_cor_v1 import copy_nodes
 from alg_clean_corridor import *
 from create_animation import do_the_animation
+from params import *
 
 
 class AlgAgentLMAPF:
@@ -66,6 +67,7 @@ class ALgLMAPFGenCor:
         self.env = env
         self.to_check_paths: bool = to_check_paths
         self.to_assert: bool = to_assert
+        self.name = 'CGA'
         # for the map
         self.img_dir = self.env.img_dir
         self.nodes, self.nodes_dict = copy_nodes(self.env.nodes)
@@ -74,6 +76,7 @@ class ALgLMAPFGenCor:
         self.map_dim = self.env.map_dim
         self.h_func = self.env.h_func
         self.h_dict = self.env.h_dict
+        self.is_sacg = self.env.is_sacg
 
         self.agents: List[AlgAgentLMAPF] = []
         self.agents_dict: Dict[str, AlgAgentLMAPF] = {}
@@ -115,6 +118,8 @@ class ALgLMAPFGenCor:
             num = obs_agent.num
             start_node = self.nodes_dict[obs_agent.start_node_name]
             next_goal_node = self.nodes_dict[obs_agent.next_goal_node_name]
+            if self.is_sacg and num != 0:
+                next_goal_node = self.nodes_dict[obs_agent.curr_node_name]
             new_agent = AlgAgentLMAPF(num=num, start_node=start_node, next_goal_node=next_goal_node)
             self.agents.append(new_agent)
             self.agents_dict[new_agent.name] = new_agent
@@ -125,8 +130,8 @@ class ALgLMAPFGenCor:
             agent.prev_node = agent.curr_node
             agent.curr_node = self.nodes_dict[obs_agent.curr_node_name]
             agent.next_goal_node = self.nodes_dict[obs_agent.next_goal_node_name]
-            # if agent.num != 0:
-            #     agent.next_goal_node = self.nodes_dict[obs_agent.curr_node_name]
+            if self.is_sacg and agent.num != 0:
+                agent.next_goal_node = self.nodes_dict[obs_agent.curr_node_name]
             agent.arrived = obs_agent.arrived
             agent.goals_per_iter_list.append(agent.next_goal_node)
 
@@ -178,6 +183,8 @@ class ALgLMAPFGenCor:
         for agent in fresh_agents:
             # if there have future steps in the path -> continue
             if agent.num in pa_heap:
+                continue
+            if self.is_sacg and agent.num != 0:
                 continue
             p_counter += 1
             # agents that are flexible for the current agent
@@ -524,49 +531,13 @@ class ALgLMAPFGenCor:
 
 @use_profiler(save_dir='../stats/alg_LMAPF_gen_cor_v1.pstat')
 def main():
-    set_seed(random_seed_bool=False, seed=7310)
-    # set_seed(random_seed_bool=False, seed=123)
-    # set_seed(random_seed_bool=True)
-    # N = 50
-    # N = 100
-    # N = 150
-    # N = 200
-    # N = 250
-    N = 300
-    # N = 400
-    # N = 500
-    # N = 600
-    # N = 620
-    # N = 700
-    # N = 750
-    # N = 850
-    # N = 900
-    # img_dir = '10_10_my_rand.map'
-    # img_dir = 'empty-32-32.map'
-    # img_dir = 'random-32-32-10.map'
-    # img_dir = 'random-32-32-20.map'
-    # img_dir = 'room-32-32-4.map'
-    # img_dir = 'maze-32-32-2.map'
-    img_dir = 'maze-32-32-4.map'
-    # img_dir = 'random-64-64-20.map'
-    # max_time = 20
-    max_time = 100
-    # max_time = 200
-    # corridor_size = 20
-    # corridor_size = 10
-    # corridor_size = 5
-    # corridor_size = 3
-    # corridor_size = 2
-    corridor_size = 1
-
-    # to_render: bool = True
-    to_render: bool = False
-
-    # to_check_paths: bool = True
-    to_check_paths: bool = False
+    # SACG
+    N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_SACG()
+    # LMAPF
+    # N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_LMAPF()
 
     # problem creation
-    env = SimEnvLMAPF(img_dir=img_dir)
+    env = SimEnvLMAPF(img_dir=img_dir, is_sacg=is_sacg)
     start_nodes = random.sample(env.nodes, N)
     plot_rate = 0.5
 
@@ -613,8 +584,10 @@ def main():
     plot_total_finished_goals(ax[1], plot_info)
     # plot_unique_movements(ax[1], plot_info)
     plt.show()
-    do_the_animation(info={'img_dir': img_dir, 'img_np': env.img_np, 'agents': alg.agents, 'max_time': max_time},
-                     to_save=False)
+    if env.is_sacg:
+        max_time = len(env.agents_dict['agent_0'].path)
+    do_the_animation(info={'img_dir': img_dir, 'img_np': env.img_np, 'agents': alg.agents, 'max_time': max_time,
+                           'is_sacg': env.is_sacg, 'alg_name': alg.name}, to_save=to_save)
     print(f'finished run')
 
 

@@ -9,7 +9,6 @@ import numpy as np
 from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
-from alg_gen_cor_v1 import get_full_tube, get_assign_agent_to_node_dict
 
 
 class Tube:
@@ -141,6 +140,26 @@ class Tube:
                         step_dict = {t_agent.path[-1].xy_name: t_agent for t_agent in t_agents}
         for t_agent in t_agents:
             assert t_agent.path[-1] == agent_to_final_node_dict[t_agent.name]
+
+
+def get_full_tube(
+        free_node: Node,
+        spanning_tree_dict: Dict[str, str],
+        nodes_dict: Dict[str, Node],
+        node_name_to_f_agent_heap: List[str]
+) -> Tuple[List[Node], List[int]]:
+    tube: List[Node] = [free_node]
+    tube_pattern = [1]
+    parent = spanning_tree_dict[free_node.xy_name]
+    while parent is not None:
+        parent_node = nodes_dict[parent]
+        tube.append(parent_node)
+        if parent_node.xy_name in node_name_to_f_agent_heap:
+            tube_pattern.append(0)
+        else:
+            tube_pattern.append(1)
+        parent = spanning_tree_dict[parent]
+    return tube, tube_pattern
 
 
 def find_t_agents(tube: Tube, flex_agents) -> list:

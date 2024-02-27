@@ -57,10 +57,11 @@ def get_latest_vc_on_node(i_node: Node, vc_np: np.ndarray | None) -> int:
     indices = np.argwhere(vc_times == 1)
     if len(indices) == 0:
         return 0
-    return indices[0, -1]
+    return indices[-1][0]
 
 
-def create_constraints(paths: List[List[Node]], map_dim: Tuple[int, int]) -> Tuple[np.ndarray | None, np.ndarray | None, np.ndarray | None]:
+def create_constraints(paths: List[List[Node]], map_dim: Tuple[int, int]) -> Tuple[
+    np.ndarray | None, np.ndarray | None, np.ndarray | None]:
     """
     vc_np: vertex constraints [x, y, t] = bool
     ec_np: edge constraints [x, y, x, y, t] = bool
@@ -83,6 +84,7 @@ def create_constraints(paths: List[List[Node]], map_dim: Tuple[int, int]) -> Tup
             vc_np[n.x, n.y, t] = 1
             # ec
             ec_np[prev_n.x, prev_n.y, n.x, n.y, t] = 1
+            prev_n = n
     return vc_np, ec_np, pc_np
 
 
@@ -107,7 +109,7 @@ def get_node_successor(i_node: Node, successor_xy_name: str, new_t: int, nodes_d
             return None
 
     if ec_np is not None:
-        if new_t < ec_np.shape[-1] and ec_np[i_node.x, i_node.y, node_successor.x, node_successor.y, new_t]:
+        if new_t < ec_np.shape[-1] and ec_np[node_successor.x, node_successor.y, i_node.x, i_node.y, new_t]:
             return None
 
     if pc_np is not None:
@@ -119,7 +121,8 @@ def get_node_successor(i_node: Node, successor_xy_name: str, new_t: int, nodes_d
 
 
 def calc_temporal_a_star(curr_node: Node, goal_node: Node, nodes_dict: Dict[str, Node], h_dict, max_len: int,
-                         vc_np: np.ndarray | None, ec_np: np.ndarray | None, pc_np: np.ndarray | None) -> Tuple[List[Node], dict] | None:
+                         vc_np: np.ndarray | None = None, ec_np: np.ndarray | None = None, pc_np: np.ndarray | None = None) -> Tuple[List[
+    Node], dict] | None:
     """
     :param curr_node:
     :param goal_node:
@@ -147,7 +150,7 @@ def calc_temporal_a_star(curr_node: Node, goal_node: Node, nodes_dict: Dict[str,
         iteration += 1
         print(f'\ropen: {len(open_list)}, closed: {len(closed_list)}', end='')
         i_t, i_h, i_f, i_node = open_list.pop()
-        i_node_name = i_node.xy_name
+        # i_node_name = i_node.xy_name
         if i_node == goal_node or i_t >= max_len:
             # if there is a future constraint on a goal
             latest_vc_on_node: int = get_latest_vc_on_node(i_node, vc_np)
@@ -187,6 +190,76 @@ def calc_temporal_a_star(curr_node: Node, goal_node: Node, nodes_dict: Dict[str,
     return path, {'runtime': runtime, 'open_list': open_list, 'closed_list': closed_list}
 
 
+def calc_fastest_escape(curr_node: Node, goal_node: Node, nodes_dict: Dict[str, Node], h_dict,
+                        vc_np: np.ndarray | None = None, ec_np: np.ndarray | None = None, pc_np: np.ndarray | None = None) -> Tuple[List[
+    Node] | None, dict]:
+    """
+    :param curr_node:
+    :param goal_node:
+    :param nodes_dict:
+    :param h_dict:
+    :param max_len:
+    :param vc_np: vertex constraints [x, y, t] = bool
+    :param ec_np: edge constraints [x, y, x, y, t] = bool
+    :param pc_np: permanent constraints [x, y] = int
+    :return: List of nodes where the first item is the agent's current location
+    """
+    start_time = time.time()
+    goal_h_dict: np.ndarray = h_dict[goal_node.xy_name]
+    initial_h = int(goal_h_dict[curr_node.x, curr_node.y])
+    open_list = HeapList()
+    open_list.add(i_t=0, i_h=initial_h, i_node=curr_node)
+    closed_list = HeapList()
+    spanning_tree_dict: Dict[str, str | None] = {f'{curr_node.xy_name}_0': None}  # child: parent
+    xyt_nodes_dict = {f'{curr_node.xy_name}_0': curr_node}
+
+    iteration = 0
+    i_t = 0
+    i_node = curr_node
+    while len(open_list) > 0:
+        iteration += 1
+        print(f'\ropen: {len(open_list)}, closed: {len(closed_list)}', end='')
+        i_t, i_h, i_f, i_node = open_list.pop()
+        i_node_name = i_node.xy_name
+        if i_t > 0:
+            # if there is a future constraint on a goal
+            latest_vc_on_node: int = get_latest_vc_on_node(i_node, vc_np)
+            if i_t > latest_vc_on_node:
+                path = reconstruct_path(i_node, i_t, spanning_tree_dict, xyt_nodes_dict)
+                runtime = time.time() - start_time
+                return path, {'runtime': runtime, 'open_list': open_list, 'closed_list': closed_list}
+
+        node_current_neighbours = i_node.neighbours[:]
+        random.shuffle(node_current_neighbours)
+        for successor_xy_name in node_current_neighbours:
+            new_t = i_t + 1
+            successor_xyt_name = f'{successor_xy_name}_{new_t}'
+            # if successor_xy_name == i_node.xy_name:
+            #     continue
+            if successor_xyt_name in open_list:
+                continue
+            if successor_xyt_name in closed_list:
+                continue
+
+            node_successor = get_node_successor(i_node, successor_xy_name, new_t, nodes_dict, vc_np, ec_np, pc_np)
+            if node_successor is None:
+                continue
+            # node_successor = nodes_dict[successor_xy_name]
+            new_h = int(goal_h_dict[node_successor.x, node_successor.y])
+            # if new_h > initial_h + 1:
+            #     continue
+
+            spanning_tree_dict[successor_xyt_name] = f'{i_node.xy_name}_{i_t}'
+            xyt_nodes_dict[f'{successor_xy_name}_{new_t}'] = node_successor
+            open_list.add(i_t=new_t, i_h=new_h, i_node=node_successor)
+
+        closed_list.add(i_t=i_t, i_h=i_h, i_node=i_node)
+
+    # path = reconstruct_path(i_node, i_t, spanning_tree_dict, xyt_nodes_dict)
+    runtime = time.time() - start_time
+    return None, {'runtime': runtime, 'open_list': open_list, 'closed_list': closed_list}
+
+
 def main():
     # set_seed(random_seed_bool=False, seed=7310)
     # set_seed(random_seed_bool=False, seed=123)
@@ -207,7 +280,8 @@ def main():
     path_to_heuristics = '../logs_for_heuristics'
     map_dim = get_dims_from_pic(img_dir=img_dir, path=path_to_maps)
     nodes, nodes_dict, img_np = build_graph_nodes(img_dir=img_dir, path=path_to_maps, show_map=False)
-    h_dict = parallel_build_heuristic_for_entire_map(nodes, nodes_dict, map_dim, img_dir=img_dir, path=path_to_heuristics)
+    h_dict = parallel_build_heuristic_for_entire_map(nodes, nodes_dict, map_dim, img_dir=img_dir,
+                                                     path=path_to_heuristics)
 
     # ------------------------- #
     node_start = random.choice(nodes)
@@ -232,10 +306,14 @@ def main():
     paths = [path]
     vc_np, ec_np, pc_np = create_constraints(paths, map_dim)
 
-    path, info = calc_temporal_a_star(curr_node=node_start, goal_node=node_goal, nodes_dict=nodes_dict,
-                                      h_dict=h_dict, max_len=1000, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
+    # path, info = calc_temporal_a_star(curr_node=node_start, goal_node=node_goal, nodes_dict=nodes_dict,
+    #                                   h_dict=h_dict, max_len=1000, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
+
+    path, info = calc_fastest_escape(curr_node=node_start, goal_node=node_start, nodes_dict=nodes_dict,
+                                     h_dict=h_dict, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
 
     if path:
+        print(f'\nruntime: {info['runtime']: .2f}s.')
         print('The result is:', *[node.xy_name for node in path], sep='->')
         print('The result is:', *[i for i in range(len((path)))], sep='->')
 
@@ -244,6 +322,7 @@ def main():
         plot_info = {'path': path, 'img_np': img_np, **info}
         plot_temp_a_star(ax[0], plot_info)
         plt.show()
+
 
 if __name__ == '__main__':
     main()

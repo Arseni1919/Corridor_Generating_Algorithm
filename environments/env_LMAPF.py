@@ -25,8 +25,9 @@ class SimAgentLMAPF:
 
 
 class SimEnvLMAPF:
-    def __init__(self, img_dir: str, **kwargs):
+    def __init__(self, img_dir: str, is_sacg: bool = False, **kwargs):
         self.img_dir = img_dir
+        self.is_sacg = is_sacg
         path_to_maps: str = kwargs['path_to_maps'] if 'path_to_maps' in kwargs else '../maps'
         path_to_heuristics: str = kwargs[
             'path_to_heuristics'] if 'path_to_heuristics' in kwargs else '../logs_for_heuristics'
@@ -52,6 +53,9 @@ class SimEnvLMAPF:
 
     @property
     def _if_terminated(self) -> bool:
+        if self.is_sacg:
+            agent_0 = self.agents_dict['agent_0']
+            return agent_0.curr_node == agent_0.next_goal_node
         return self.iteration > self.max_time
 
     @property
@@ -129,6 +133,8 @@ class SimEnvLMAPF:
             if agent.next_goal_node is None:
                 self.assign_next_goal(agent)
                 continue
+            if self.is_sacg:
+                continue
             agent.arrived = agent.curr_node == agent.next_goal_node
             if agent.arrived:
                 agent.finished_goals.append(agent.next_goal_node)
@@ -205,8 +211,11 @@ def main():
     max_time = 100
     corridor_size = 5
 
+    # is_sacg = False
+    is_sacg = True
+
     # problem creation
-    env = SimEnvLMAPF(img_dir=img_dir)
+    env = SimEnvLMAPF(img_dir=img_dir, is_sacg=is_sacg)
     start_nodes = random.sample(env.nodes, N)
 
     # alg creation + init
