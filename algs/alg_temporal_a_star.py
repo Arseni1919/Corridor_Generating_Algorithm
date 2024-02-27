@@ -67,6 +67,8 @@ def create_constraints(paths: List[List[Node]], map_dim: Tuple[int, int]) -> Tup
     ec_np: edge constraints [x, y, x, y, t] = bool
     pc_np: permanent constraints [x, y] = int or -1
     """
+    if len(paths) == 0:
+        return None, None, None
     max_path_len = max(map(lambda x: len(x), paths))
     if max_path_len == 0:
         return None, None, None

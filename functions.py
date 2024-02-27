@@ -334,7 +334,6 @@ def get_nei_nodes_times(curr_node, nei_r, nodes_dict):
     return nei_nodes, nei_nodes_dict
 
 
-@lru_cache(maxsize=128)
 def euclidean_distance_nodes(node1, node2):
     # p = [node1.x, node1.y]
     # q = [node2.x, node2.y]
@@ -342,7 +341,6 @@ def euclidean_distance_nodes(node1, node2):
     # return np.sqrt((node1.x - node2.x) ** 2 + (node1.y - node2.y) ** 2)
 
 
-@lru_cache(maxsize=128)
 def manhattan_distance_nodes(node1, node2):
     return abs(node1.x-node2.x) + abs(node1.y-node2.y)
 

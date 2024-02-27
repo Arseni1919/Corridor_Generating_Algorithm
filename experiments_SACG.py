@@ -2,12 +2,12 @@ from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
 from main_show_results import show_results
-from algs.alg_prp_sacg import ALgSACGPrP
-from algs.alg_LMAPF_gen_cor_v1 import ALgLMAPFGenCor
+from algs.alg_SACG_prp import ALgPrPSACG
+from algs.alg_CGA import ALgCGA
 from environments.env_LMAPF import SimEnvLMAPF
 
 
-def run_the_problem(env: SimEnvLMAPF, obs: dict, alg: ALgLMAPFGenCor | ALgSACGPrP) -> None:
+def run_the_problem(env: SimEnvLMAPF, obs: dict, alg: ALgCGA | ALgPrPSACG) -> None:
     for i_step in range(10000):
         actions = alg.get_actions(obs)  # alg part
         obs, metrics, terminated, info = env.step(actions)
@@ -25,21 +25,23 @@ def main():
     # ---------------------------------------------------- #
     # n_agents_list = [50, 100, 150, 200, 250, 300, 350, 400]
     # n_agents_list = [100, 200, 300, 400, 500, 600]
-    n_agents_list = [500, 600, 700, 800, 900, 1000]
+    n_agents_list = [200, 300, 400, 500, 600, 700]
+    # n_agents_list = [300, 400, 500, 600, 700, 800]
+    # n_agents_list = [500, 600, 700, 800, 900, 1000]
     # n_agents_list = [100, 200]
-    # n_agents_list = [1000]
+    # n_agents_list = [700]
     # ---------------------------------------------------- #
     # runs_per_n_agents = 5
     # runs_per_n_agents = 15
     runs_per_n_agents = 25
     # ---------------------------------------------------- #
-    algorithms = [ALgSACGPrP, ALgLMAPFGenCor]
+    algorithms = [ALgPrPSACG, ALgCGA]
     # ---------------------------------------------------- #
     time_to_think_limit = 5
     # ---------------------------------------------------- #
-    img_dir = 'empty-32-32.map'
+    # img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-20.map'
-    # img_dir = 'maze-32-32-4.map'
+    img_dir = 'maze-32-32-4.map'
     # img_dir = 'room-32-32-4.map'
 
     # img_dir = '10_10_my_rand.map'
@@ -70,7 +72,7 @@ def main():
     logs_dict['time_to_think_limit'] = time_to_think_limit
     # ---------------------------------------------------- #
     # middle_plot = True
-    middle_plot=False
+    middle_plot = False
     # ---------------------------------------------------- #
     if middle_plot:
         fig, ax = plt.subplots(1, 3, figsize=(14, 4))

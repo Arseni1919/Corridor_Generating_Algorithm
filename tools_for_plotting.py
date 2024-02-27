@@ -628,12 +628,12 @@ def plot_throughput(ax, info):
     n_agents_list = info['n_agents_list']
     img_dir = info['img_dir']
     time_to_think_limit = info['time_to_think_limit']
-    iterations = info['iterations']
+    max_time = info['max_time']
 
     for i_alg in alg_names:
         y_list = []
         for n_a in n_agents_list:
-            y_list.append(np.mean(info[i_alg][f'{n_a}']['n_closed_goals']))
+            y_list.append(np.mean(info[i_alg][f'{n_a}']['throughput']))
         ax.plot(n_agents_list, y_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
                 alpha=0.5, label=f'{i_alg}', linewidth=3, markersize=13)
     ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
@@ -641,7 +641,7 @@ def plot_throughput(ax, info):
     ax.set_xlabel('N agents', fontsize=15)
     ax.set_ylabel('Average Throughput', fontsize=15)
     # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec. | {iterations} iters.')
-    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec. | {iterations} iters.',
+    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec. | {max_time} steps.',
                    size=11)
     set_legend(ax, size=11)
 

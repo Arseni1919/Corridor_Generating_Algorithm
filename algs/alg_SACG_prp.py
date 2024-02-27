@@ -84,7 +84,7 @@ class AlgPrPAgentSACG:
         return self.num == other.num
 
 
-class ALgSACGPrP:
+class ALgPrPSACG:
     name = 'PrP_SACG'
 
     def __init__(self, env: SimEnvLMAPF, to_check_paths: bool = False, to_assert: bool = False, **kwargs):
@@ -228,7 +228,7 @@ def main():
     # the run
     obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], max_time=max_time, corridor_size=corridor_size)
     # alg creation + init
-    alg = ALgSACGPrP(env=env, to_check_paths=to_check_paths)
+    alg = ALgPrPSACG(env=env, to_check_paths=to_check_paths)
     solved = alg.initiate_problem(obs=obs)
 
     if solved:
