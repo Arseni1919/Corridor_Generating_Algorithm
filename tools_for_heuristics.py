@@ -60,14 +60,14 @@ def parallel_update_h_table(node, nodes, nodes_dict, map_dim, h_dict, node_index
 
 
 def parallel_build_heuristic_for_entire_map(nodes: List[Node], nodes_dict: Dict[str, Node], map_dim: Tuple[int, int], **kwargs) -> Dict[str, np.ndarray]:
-    print(f'Started to build heuristic for {kwargs['img_dir'][:-4]}...')
+    # print(f'Started to build heuristic for {kwargs['img_dir'][:-4]}...')
     path = kwargs['path']
     possible_dir = f"{path}/h_dict_of_{kwargs['img_dir'][:-4]}.json"
 
     # if there is one
     h_dict = load_h_dict(possible_dir)
     if h_dict is not None:
-        print(f'\nFinished to build heuristic for all nodes.')
+        # print(f'\nFinished to build heuristic for all nodes.')
         return h_dict
 
     # else, create one
@@ -77,7 +77,7 @@ def parallel_build_heuristic_for_entire_map(nodes: List[Node], nodes_dict: Dict[
         for node_index, node in enumerate(nodes):
             executor.submit(parallel_update_h_table, node, nodes, nodes_dict, map_dim, h_dict, node_index, **kwargs)
     save_h_dict(h_dict, possible_dir)
-    print(f'\nFinished to build heuristic for all nodes.')
+    # print(f'\nFinished to build heuristic for all nodes.')
 
     h_dict = load_h_dict(possible_dir)
     if h_dict is not None:

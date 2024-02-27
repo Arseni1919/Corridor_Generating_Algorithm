@@ -10,10 +10,10 @@ from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
 from environments.env_LMAPF import SimEnvLMAPF
-from alg_gen_cor_v1 import copy_nodes
-from alg_clean_corridor import *
+from algs.alg_gen_cor_v1 import copy_nodes
+from algs.alg_clean_corridor import *
 from create_animation import do_the_animation
-from params import *
+from algs.params import *
 
 
 class AlgAgentLMAPF:
@@ -62,17 +62,20 @@ class AlgAgentLMAPF:
 
 
 class ALgLMAPFGenCor:
+
+    name = 'CGA'
+
     def __init__(self, env: SimEnvLMAPF, to_check_paths: bool = False, to_assert: bool = False, **kwargs):
 
         self.env = env
         self.to_check_paths: bool = to_check_paths
         self.to_assert: bool = to_assert
-        self.name = 'CGA'
+        # self.name = 'CGA'
         # for the map
         self.img_dir = self.env.img_dir
         self.nodes, self.nodes_dict = copy_nodes(self.env.nodes)
         self.img_np: np.ndarray = self.env.img_np
-        self.freedom_nodes_np: np.ndarray = get_freedom_nodes_np(self.nodes, self.nodes_dict, self.img_np)
+        self.freedom_nodes_np: np.ndarray = get_freedom_nodes_np(self.nodes, self.nodes_dict, self.img_np, self.img_dir)
         self.map_dim = self.env.map_dim
         self.h_func = self.env.h_func
         self.h_dict = self.env.h_dict
@@ -87,12 +90,18 @@ class ALgLMAPFGenCor:
         self.next_iteration: int = 0
 
         self.global_order: List[AlgAgentLMAPF] = []
+        self.logs: dict = {}
 
-    def initiate_problem(self, obs: dict) -> None:
+    def initiate_problem(self, obs: dict) -> bool:
         self.start_nodes = [self.nodes_dict[s_name] for s_name in obs['start_nodes_names']]
         self._check_solvability()
         self._create_agents(obs)
         self.global_order = self.agents[:]
+        self.logs = {
+            'runtime': 0,
+            'expanded_nodes': 0,
+        }
+        return True
 
     def get_actions(self, obs: dict) -> Dict[str, str]:
         # updates
@@ -157,7 +166,8 @@ class ALgLMAPFGenCor:
             - if you still have no path (you didn't create it for yourself and others didn't do it for you) then stay at place for the next move
         :return:
         """
-        print(f'\n[{self.next_iteration}][{self.global_order.index(self.agents_dict['agent_0'])}] _calc_next_steps')
+        start_time = time.time()
+        # print(f'\n[{self.next_iteration}][{self.global_order.index(self.agents_dict['agent_0'])}] _calc_next_steps')
         # get all agents that already have plans for the future
         if self.to_assert:
             assert self.next_iteration != 0
@@ -265,6 +275,8 @@ class ALgLMAPFGenCor:
                 assert agent.path[self.next_iteration].xy_name in agent.path[self.next_iteration - 1].neighbours
 
         # check_vc_ec_neic_iter(self.agents, self.next_iteration)
+        runtime = time.time() - start_time
+        self.logs['runtime'] += runtime
         # --------------------------- #
 
     def _plan_for_agent(self, agent: AlgAgentLMAPF, planned_agents: List[AlgAgentLMAPF],
@@ -298,7 +310,7 @@ class ALgLMAPFGenCor:
         :param flex_agents:
         :return: planned, captured_agents
         """
-        print(f'\r[{p_counter}][{agent.name}] _plan_for_agent', end='')
+        # print(f'\r[{p_counter}][{agent.name}] _plan_for_agent', end='')
         node_name_to_f_agent_dict = {f_agent.curr_node.xy_name: f_agent for f_agent in flex_agents}
         node_name_to_f_agent_heap = list(node_name_to_f_agent_dict.keys())
         heapq.heapify(node_name_to_f_agent_heap)
@@ -408,7 +420,7 @@ class ALgLMAPFGenCor:
                                            self.freedom_nodes_np, self.corridor_size, node_name_to_f_agent_heap)
             # corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
             # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
-
+            self.logs['expanded_nodes'] += len(corridor)
             # if a corridor just a single node (that means it only contains the current location), then return False
             assert len(corridor) != 0
             if len(corridor) == 1:
@@ -441,10 +453,11 @@ class ALgLMAPFGenCor:
             tubes_are_good: bool = True
             for c_agent in c_agents:
                 # try to create a tube + free_node for c_agent (a new free_node must be different from other free_nodes)
-                solvable, tube = get_tube(
+                solvable, tube, get_tube_info = get_tube(
                     c_agent, new_map, tubes, corridor_for_c_agents, self.nodes_dict, node_name_to_f_agent_heap,
                     self.to_assert
                 )
+                self.logs['expanded_nodes'] += len(get_tube_info['open_list']) + len(get_tube_info['closed_list'])
 
                 # if there is no tube, then return False
                 if not solvable:

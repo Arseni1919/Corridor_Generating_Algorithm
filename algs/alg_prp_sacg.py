@@ -10,11 +10,11 @@ from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
 from environments.env_LMAPF import SimEnvLMAPF
-from alg_gen_cor_v1 import copy_nodes
-from alg_clean_corridor import *
+from algs.alg_gen_cor_v1 import copy_nodes
+from algs.alg_clean_corridor import *
 from create_animation import do_the_animation
-from params import *
-from alg_temporal_a_star import calc_temporal_a_star, calc_fastest_escape, create_constraints
+from algs.params import *
+from algs.alg_temporal_a_star import calc_temporal_a_star, calc_fastest_escape, create_constraints
 
 
 def update_captured_nodes(agents: list, captured_nodes: List[str]) -> None:
@@ -85,18 +85,19 @@ class AlgPrPAgentSACG:
 
 
 class ALgSACGPrP:
+    name = 'PrP_SACG'
+
     def __init__(self, env: SimEnvLMAPF, to_check_paths: bool = False, to_assert: bool = False, **kwargs):
 
         self.env = env
         assert self.env.is_sacg
         self.to_check_paths: bool = to_check_paths
         self.to_assert: bool = to_assert
-        self.name = 'PrP_SACG'
+        # self.name = 'PrP_SACG'
         # for the map
         self.img_dir = self.env.img_dir
         self.nodes, self.nodes_dict = copy_nodes(self.env.nodes)
         self.img_np: np.ndarray = self.env.img_np
-        self.freedom_nodes_np: np.ndarray = get_freedom_nodes_np(self.nodes, self.nodes_dict, self.img_np)
         self.map_dim = self.env.map_dim
         self.h_func = self.env.h_func
         self.h_dict = self.env.h_dict
@@ -105,16 +106,25 @@ class ALgSACGPrP:
         self.agents_dict: Dict[str, AlgPrPAgentSACG] = {}
         self.start_nodes: List[Node] = []
         self.next_iteration: int = 0
+        self.logs: dict = {}
 
     def initiate_problem(self, obs: dict) -> bool:
         self.start_nodes = [self.nodes_dict[s_name] for s_name in obs['start_nodes_names']]
         self._create_agents(obs)
 
+        self.logs = {
+            'runtime': 0,
+            'expanded_nodes': 0,
+        }
+        start_time = time.time()
         succeeded = False
         tries = 0
         while not succeeded and tries < 100:
             tries += 1
             succeeded = self._solve(tries)
+
+        runtime = time.time() - start_time
+        self.logs['runtime'] = runtime
 
         return succeeded
 
@@ -158,9 +168,10 @@ class ALgSACGPrP:
     def _solve(self, tries: int) -> bool:
         print(f'\nPrP-SACG starts to solve by a {tries} try...')
         main_agent = self.agents_dict['agent_0']
-        assert main_agent.curr_node != main_agent.next_goal_node
+        # assert main_agent.curr_node != main_agent.next_goal_node
         path, info = calc_temporal_a_star(curr_node=main_agent.curr_node, goal_node=main_agent.next_goal_node,
                                           nodes_dict=self.nodes_dict, max_len=10000, h_dict=self.h_dict)
+        self.logs['expanded_nodes'] += len(info['open_list']) + len(info['closed_list'])
         main_agent.path = path
         planned_agents = [main_agent]
         captured_nodes: List[str] = []
@@ -179,6 +190,7 @@ class ALgSACGPrP:
                 next_path, info = calc_fastest_escape(curr_node=next_agent.curr_node, goal_node=next_agent.curr_node,
                                                       nodes_dict=self.nodes_dict, h_dict=self.h_dict,
                                                       vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
+                self.logs['expanded_nodes'] += len(info['open_list']) + len(info['closed_list'])
                 if next_path is None:
                     return False
                 next_agent.path = next_path
@@ -197,7 +209,7 @@ class ALgSACGPrP:
         return True
 
 
-@use_profiler(save_dir='../stats/alg_prp_sacg.py.pstat')
+@use_profiler(save_dir='../stats/alg_prp_sacg.pstat')
 def main():
     N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_SACG()
     # problem creation

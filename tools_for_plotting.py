@@ -412,9 +412,12 @@ def plot_sr(ax, info):
 
     for i_alg in alg_names:
         sr_list = []
+        x_list = []
         for n_a in n_agents_list:
-            sr_list.append(np.sum(info[i_alg][f'{n_a}']['sr']) / len(info[i_alg][f'{n_a}']['sr']))
-        ax.plot(n_agents_list, sr_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
+            if len(info[i_alg][f'{n_a}']['sr']) > 0:
+                sr_list.append(np.sum(info[i_alg][f'{n_a}']['sr']) / len(info[i_alg][f'{n_a}']['sr']))
+                x_list.append(n_a)
+        ax.plot(x_list, sr_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
                 alpha=0.5, label=f'{i_alg}', linewidth=5, markersize=20)
     ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
     ax.set_xticks(n_agents_list)
@@ -523,7 +526,7 @@ def plot_time_metric_cactus(ax, info):
         rt_list = []
         # res_str = ''
         for n_a in x_list:
-            rt_list.extend(info[i_alg][f'{n_a}']['time'])
+            rt_list.extend(info[i_alg][f'{n_a}']['runtime'])
             # res_str += f'\t{n_a} - {rt_list[-1]: .2f}, '
         rt_list.sort()
         ax.plot(rt_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
@@ -533,6 +536,64 @@ def plot_time_metric_cactus(ax, info):
     # ax.set_xticks(x_list)
     ax.set_xlabel('Solved Instances', fontsize=15)
     ax.set_ylabel('Runtime', fontsize=15)
+    # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
+    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
+                   size=11)
+    set_legend(ax, size=17)
+
+
+def plot_en_metric_cactus(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+
+    # x_list = n_agents_list[:4]
+    x_list = n_agents_list
+    for i_alg in alg_names:
+        rt_list = []
+        # res_str = ''
+        for n_a in x_list:
+            rt_list.extend(info[i_alg][f'{n_a}']['expanded_nodes'])
+            # res_str += f'\t{n_a} - {rt_list[-1]: .2f}, '
+        rt_list.sort()
+        ax.plot(rt_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
+                alpha=0.5, label=f'{i_alg}', linewidth=2, markersize=10)
+        # print(f'{i_alg}\t\t\t: {res_str}')
+    # ax.set_xlim([min(x_list) - 20, max(x_list) + 20])
+    # ax.set_xticks(x_list)
+    ax.set_xlabel('Solved Instances', fontsize=15)
+    ax.set_ylabel('Expanded Nodes', fontsize=15)
+    # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
+    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
+                   size=11)
+    set_legend(ax, size=17)
+
+
+def plot_sq_metric_cactus(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+
+    # x_list = n_agents_list[:4]
+    x_list = n_agents_list
+    for i_alg in alg_names:
+        rt_list = []
+        # res_str = ''
+        for n_a in x_list:
+            rt_list.extend(info[i_alg][f'{n_a}']['sq'])
+            # res_str += f'\t{n_a} - {rt_list[-1]: .2f}, '
+        rt_list.sort()
+        ax.plot(rt_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
+                alpha=0.5, label=f'{i_alg}', linewidth=2, markersize=10)
+        # print(f'{i_alg}\t\t\t: {res_str}')
+    # ax.set_xlim([min(x_list) - 20, max(x_list) + 20])
+    # ax.set_xticks(x_list)
+    ax.set_xlabel('Solved Instances', fontsize=15)
+    ax.set_ylabel('Solution Quality', fontsize=15)
     # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
     set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
                    size=11)

@@ -2,9 +2,9 @@ from functions import set_seed
 
 
 def params_for_SACG():
-    # set_seed(random_seed_bool=False, seed=7389)
+    set_seed(random_seed_bool=False, seed=9922)
     # set_seed(random_seed_bool=False, seed=123)
-    set_seed(random_seed_bool=True)
+    # set_seed(random_seed_bool=True)
     # N = 50
     # N = 100
     # N = 150

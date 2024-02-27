@@ -25,9 +25,10 @@ class SimAgentLMAPF:
 
 
 class SimEnvLMAPF:
-    def __init__(self, img_dir: str, is_sacg: bool = False, **kwargs):
+    def __init__(self, img_dir: str, is_sacg: bool = False, to_check_collisions: bool = True, **kwargs):
         self.img_dir = img_dir
         self.is_sacg = is_sacg
+        self.to_check_collisions = to_check_collisions
         path_to_maps: str = kwargs['path_to_maps'] if 'path_to_maps' in kwargs else '../maps'
         path_to_heuristics: str = kwargs[
             'path_to_heuristics'] if 'path_to_heuristics' in kwargs else '../logs_for_heuristics'
@@ -108,7 +109,7 @@ class SimEnvLMAPF:
         obs = self._get_obs()
         metrics = self._get_metrics()
         info = {}
-        print(f'[ENV]: iteration: {self.iteration}')
+        print(f'\r[ENV]: iteration: {self.iteration}', end='')
         if self._if_terminated:
             print(f'[ENV]: finished.')
         return obs, metrics, self._if_terminated, info
@@ -123,6 +124,8 @@ class SimEnvLMAPF:
 
         possible_nodes: List[Node] = [n for n in self.nodes if n.xy_name not in occupied_nodes_odict]
         next_goal_node: Node = random.choice(possible_nodes)
+        while next_goal_node == curr_agent.curr_node:
+            next_goal_node: Node = random.choice(possible_nodes)
         curr_agent.next_goal_node = next_goal_node
 
         # if curr_agent.num != 0:
@@ -163,7 +166,8 @@ class SimEnvLMAPF:
             if agent.prev_node.xy_name != agent.curr_node.xy_name:
                 agent.unique_moves.append(agent.curr_node)
         # checks
-        check_vc_ec_neic(self.agents)
+        if self.to_check_collisions:
+            check_vc_ec_neic(self.agents)
 
     def _get_obs(self) -> dict:
         obs = {agent.name:

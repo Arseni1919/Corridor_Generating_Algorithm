@@ -2,6 +2,20 @@ from globals import *
 from concurrent.futures import ThreadPoolExecutor
 
 
+def save_results(**kwargs):
+    algorithms = kwargs['algorithms']
+    runs_per_n_agents = kwargs['runs_per_n_agents']
+    img_dir = kwargs['img_dir']
+    logs_dict = kwargs['logs_dict']
+    file_dir = f'logs_for_plots/{datetime.now().strftime("%Y-%m-%d--%H-%M")}_ALGS-{len(algorithms)}_RUNS-{runs_per_n_agents}_MAP-{img_dir[:-4]}.json'
+    # Serializing json
+    json_object = json.dumps(logs_dict, indent=4)
+    with open(file_dir, "w") as outfile:
+        outfile.write(json_object)
+    print(f'Results saved in: {file_dir}')
+    return file_dir
+
+
 def same_configs(config1: List[Tuple[int, int]], config2: List[Tuple[int, int]]) -> bool:
     for item1, item2 in zip(config1, config2):
         if item1 != item2:

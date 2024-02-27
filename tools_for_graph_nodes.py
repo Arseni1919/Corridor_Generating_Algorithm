@@ -136,7 +136,7 @@ def distance_nodes(node1, node2, h_func: dict = None):
 
 def build_graph_nodes(img_dir: str, path: str = 'maps', show_map: bool = False) -> Tuple[List[Node], Dict[str, Node], np.ndarray]:
     # nodes, nodes_dict, img_np
-    print('Start build_graph_nodes...')
+    # print('Start build_graph_nodes...')
     img_np, (height, width) = get_np_from_dot_map(img_dir, path)
     return build_graph_from_np(img_np, show_map)
 

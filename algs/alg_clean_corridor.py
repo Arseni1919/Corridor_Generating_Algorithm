@@ -225,7 +225,7 @@ def get_agents_in_corridor(corridor: List[Node], node_name_to_f_agent_dict, node
 def get_tube(
         c_agent, new_map: np.ndarray, tubes: List[Tube], corridor_for_c_agents: List[Node],
         nodes_dict: Dict[str, Node], node_name_to_f_agent_heap: list, to_assert: bool,
-) -> Tuple[bool, Tube | None]:
+) -> Tuple[bool, Tube | None, dict]:
     """
     - get a list of captured_free_nodes that are already taken by other agents
     - find a new free node
@@ -259,7 +259,7 @@ def get_tube(
         if selected_node not in corridor_for_c_agents and selected_node.xy_name not in node_name_to_f_agent_heap and selected_node.xy_name not in captured_free_nodes_heap:
             nodes, tube_pattern = get_full_tube(selected_node, spanning_tree_dict, nodes_dict, node_name_to_f_agent_heap)
             tube = Tube(nodes, selected_node, tube_pattern)
-            return True, tube
+            return True, tube, {'closed_list': closed_list_heap, 'open_list': open_list}
 
         # corridor_nodes: List[Node] = []
         # outer_nodes: List[Node] = []
@@ -287,7 +287,7 @@ def get_tube(
         # open_list.extendleft(outer_nodes)
         # open_list.extendleft(corridor_nodes)
         closed_list_heap.append(selected_node.xy_name)
-    return False, None
+    return False, None, {'closed_list': closed_list_heap, 'open_list': open_list}
 
 
 def collapse_corridor(corridor: List[Node]):
@@ -515,13 +515,27 @@ def is_freedom_node(node: Node, nodes_dict: Dict[str, Node]) -> bool:
     return False
 
 
-def get_freedom_nodes_np(nodes: List[Node], nodes_dict: Dict[str, Node], img_np: np.ndarray) -> np.ndarray:
-    print('Started to get freedom nodes...')
+def get_freedom_nodes_np(nodes: List[Node], nodes_dict: Dict[str, Node], img_np: np.ndarray, img_dir: str) -> np.ndarray:
+    # print('Started to get freedom nodes...')
+    # load
+    possible_dir = f'logs_for_freedom_maps/{img_dir[:-4]}.npy'
+    if os.path.exists(possible_dir):
+        with open(possible_dir, 'rb') as f:
+            freedom_nodes_np = np.load(f)
+            return freedom_nodes_np
+
+    # if no saved freedom map:
     freedom_nodes_np = np.zeros(img_np.shape)
     for node in nodes:
         if is_freedom_node(node, nodes_dict):
             freedom_nodes_np[node.x, node.y] = 1
-    print('Finished freedom nodes.')
+    # print('Finished freedom nodes.')
+
+    # save
+    if os.path.exists('logs_for_freedom_maps'):
+        with open(possible_dir, 'wb') as f:
+            np.save(f, freedom_nodes_np)
+        # print('Saved freedom nodes.')
     return freedom_nodes_np
 
 
