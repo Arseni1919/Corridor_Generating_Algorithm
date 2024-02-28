@@ -761,11 +761,11 @@ def main():
     plot_info = {'i': max_time, 'iterations': max_time, 'img_dir': img_dir, 'img_np': env.img_np,
                  'n_agents': env.n_agents, 'agents': env.agents, }
     plot_step_in_env(ax[0], plot_info)
-    plot_total_finished_goals(ax[1], plot_info)
+    # plot_total_finished_goals(ax[1], plot_info)
     # plot_unique_movements(ax[1], plot_info)
     plt.show()
-    do_the_animation(info={'img_dir': img_dir, 'img_np': env.img_np, 'agents': alg.agents, 'max_time': max_time,
-                           'is_sacg': env.is_sacg, 'alg_name': alg.name}, to_save=to_save)
+    # do_the_animation(info={'img_dir': img_dir, 'img_np': env.img_np, 'agents': alg.agents, 'max_time': max_time,
+    #                        'is_sacg': env.is_sacg, 'alg_name': alg.name}, to_save=to_save)
     print(f'finished run')
 
     # ------------------------------------------------------ #

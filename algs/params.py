@@ -83,8 +83,8 @@ def params_for_LMAPF():
     # img_dir = 'random-32-32-10.map'
     # img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
-    # max_time = 20
-    max_time = 100
+    max_time = 20
+    # max_time = 100
     # max_time = 200
     # max_time = 1000
     # corridor_size = 20
