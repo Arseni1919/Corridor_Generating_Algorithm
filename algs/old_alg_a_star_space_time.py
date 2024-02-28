@@ -205,7 +205,7 @@ def a_star_xyt(start, goal, nodes, h_func,
     # print('\rFinished A*.', end='')
     # if path is None:
     #     print()
-    return path, {'runtime': time.time() - start_time, 'n_open': len(open_nodes.heap_list), 'n_closed': len(closed_nodes.heap_list), 'future_constr': future_constr}
+    return path, {'runtime': time.time() - start_time, 'n_open': len(open_nodes), 'n_closed': len(closed_nodes), 'future_constr': future_constr}
 
 
 @use_profiler(save_dir='../stats/results_a_star.pstat')

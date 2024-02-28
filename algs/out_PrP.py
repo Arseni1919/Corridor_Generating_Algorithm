@@ -5,7 +5,7 @@ from tools_for_plotting import *
 from algs.old_alg_a_star_space_time import a_star_xyt
 from algs.params import *
 from environments.env_LMAPF import SimEnvLMAPF
-from create_animation import do_the_animation
+# from create_animation import do_the_animation
 
 
 class PrPAgent:
@@ -67,16 +67,19 @@ class PrPAgent:
 
     def build_plan(self, h_agents, goal=None, nodes=None, nodes_dict=None):
         # self._execute_a_star(h_agents)
+        # {'runtime': time.time() - start_time, 'n_open': len(open_nodes), 'n_closed': len(closed_nodes)}
+        a_s_info = {'runtime': 0, 'n_open': 0, 'n_closed': 0}
         if h_agents is None:
             h_agents = []
         if self.plan is None or len(self.plan) == 0:
             nei_h_agents = [agent for agent in h_agents if agent.name in self.nei_dict]
             sub_results = create_sub_results(nei_h_agents)
             v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem = build_constraints(self.nodes, sub_results)
-            self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem,
+            a_s_info = self.execute_a_star(v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem,
                                 goal=goal, nodes=nodes, nodes_dict=nodes_dict)
+
         assert self.plan is not None
-        return self.plan
+        return a_s_info
 
     def correct_nei_pfs(self):
         if self.nei_pfs is not None:
@@ -94,7 +97,7 @@ class PrPAgent:
         return full_plan
 
     def execute_a_star(self, v_constr_dict, e_constr_dict, perm_constr_dict, xyt_problem,
-                       goal=None, nodes=None, nodes_dict=None):
+                       goal=None, nodes=None, nodes_dict=None) -> dict:
         if goal is None:
             goal = self.next_goal_node
         if nodes is None or nodes_dict is None:
@@ -115,6 +118,7 @@ class PrPAgent:
             # self.plan = None
             # IStay
             self.set_istay()
+        return a_s_info
 
     def fulfill_the_plan(self):
         if len(self.plan) == 0:
@@ -140,6 +144,12 @@ class AlgPrP:
     name = 'PrP'
 
     def __init__(self, env, **kwargs):
+        # limits
+        self.time_to_think_limit = 5
+        # RHCR part
+        self.h = 5
+        self.w = 5
+
         self.env = env
         self.agents = None
         self.agents_dict = {}
@@ -159,12 +169,8 @@ class AlgPrP:
         self.curr_iteration = None
         self.agents_names_with_new_goals = []
 
-        # limits
-        self.time_to_think_limit = 5
 
-        # RHCR part
-        self.h = 5
-        self.w = 5
+        self.logs = {}
 
     def reset(self) -> None:
         """
@@ -325,40 +331,16 @@ class AlgPrP:
                 failed_agent.set_istay()
         self._implement_istay()
 
-    def _build_plans_restart(self):
-        if self.h and self.curr_iteration % self.h != 0 and self.curr_iteration != 0:
-            return
-        start_time = time.time()
-        self._update_order()
-
-        h_agents = []
-        need_to_shuffle = False
-        for i, agent in enumerate(self.agents):
-            agent.build_plan(h_agents)
-            h_agents.append(agent)
-            if not agent.plan_succeeded:
-                need_to_shuffle = True
-
-            # limit check
-            end_time = time.time() - start_time
-            if end_time > self.time_to_think_limit:
-                self._cut_up_to_the_limit(i)
-                return
-
-        # IStay
-        self._implement_istay()
-
-        if need_to_shuffle:
-            random.shuffle(self.agents)
-
     def initial_prp_assignment(self, start_time):
         # Persist
         h_agents = []
         for i, agent in enumerate(self.agents):
-            agent.build_plan(h_agents)
+            # a_s_info = {'runtime': 0, 'n_open': 0, 'n_closed': 0}
+            a_s_info = agent.build_plan(h_agents)
             h_agents.append(agent)
 
             # limit check
+            self.logs['expanded_nodes'] += a_s_info['n_open'] + a_s_info['n_closed']
             end_time = time.time() - start_time
             if end_time > self.time_to_think_limit:
                 self._cut_up_to_the_limit(i)
@@ -381,339 +363,8 @@ class AlgPrP:
         self._implement_istay()
 
     def _build_plans(self):
-        if self.h is None:
-            self._build_plans_restart()
-        else:
-            self._build_plans_persist()
+        self._build_plans_persist()
         return {}
-
-
-
-class SimAgent:
-    def __init__(self, num, start_node, next_goal_node):
-        self.num = num
-        self.name = f'agent_{num}'
-        self.start_node: Node = start_node
-        self.prev_node: Node = start_node
-        self.curr_node: Node = start_node
-        self.prev_goal_node: Node = start_node
-        self.next_goal_node: Node = next_goal_node
-        self.plan = []
-        self.reached_the_goal = False
-        self.latest_arrival = None
-        self.time_passed_from_last_goal = 0
-        # self.nei_list, self.nei_dict = [], {}
-
-    def latest_arrival_at_the_goal(self, iteration):
-        if self.curr_node.xy_name != self.next_goal_node.xy_name:
-            self.reached_the_goal = False
-            return
-        if not self.reached_the_goal:
-            self.reached_the_goal = True
-            self.latest_arrival = iteration
-
-    def build_plan(self, **kwargs):
-        nodes = kwargs['nodes']
-        nodes_dict = kwargs['nodes_dict']
-        h_func = kwargs['h_func']
-        v_constr_dict = {node.xy_name: [] for node in nodes}
-        e_constr_dict = {node.xy_name: [] for node in nodes}
-        perm_constr_dict = {node.xy_name: [] for node in nodes}
-        new_plan, a_s_info = a_star_xyt(start=self.curr_node, goal=self.next_goal_node,
-                                        nodes=nodes, nodes_dict=nodes_dict, h_func=h_func,
-                                        v_constr_dict=v_constr_dict, e_constr_dict=e_constr_dict,
-                                        perm_constr_dict=perm_constr_dict,
-                                        # magnet_w=magnet_w, mag_cost_func=mag_cost_func,
-                                        # plotter=self.plotter, middle_plot=self.middle_plot,
-                                        # iter_limit=self.iter_limit, k_time=k_time,
-                                        agent_name=self.name)
-        new_plan.pop(0)
-        self.plan = new_plan
-
-
-class EnvLifelongMAPF:
-    def __init__(self, n_agents, img_dir, **kwargs):
-        self.n_agents = n_agents
-        self.agents: List[SimAgent] = None
-        self.img_dir = img_dir
-        self.classical_rhcr_mapf = kwargs['classical_rhcr_mapf'] if 'classical_rhcr_mapf' in kwargs else False
-        if self.classical_rhcr_mapf:
-            self.rhcr_mapf_limit = kwargs['rhcr_mapf_limit']
-            self.global_time_limit = kwargs['global_time_limit']
-        path_to_maps = kwargs['path_to_maps'] if 'path_to_maps' in kwargs else '../maps'
-        self.map_dim = get_dims_from_pic(img_dir=img_dir, path=path_to_maps)
-        self.nodes, self.nodes_dict, self.img_np = build_graph_nodes(img_dir=img_dir, path=path_to_maps, show_map=False)
-        path_to_heuristics = kwargs['path_to_heuristics'] if 'path_to_heuristics' in kwargs else '../logs_for_heuristics'
-        self.h_dict = parallel_build_heuristic_for_entire_map(self.nodes, self.nodes_dict, self.map_dim,
-                                                              img_dir=img_dir, path=path_to_heuristics)
-        self.h_func = h_func_creator(self.h_dict)
-
-        # for a single run
-        self.start_nodes = None
-        self.first_goal_nodes = None
-        self.iteration = None
-        self.start_time = None
-
-        # for plotting
-        self.middle_plot = kwargs['middle_plot']
-        if self.middle_plot:
-            self.plot_per = kwargs['plot_per']
-            self.plot_rate = kwargs['plot_rate']
-            self.plot_from = kwargs['plot_from']
-            # self.fig, self.ax = plt.subplots()
-            # self.fig, self.ax = plt.subplots(figsize=(14, 7))
-            # self.fig, self.ax = plt.subplots(figsize=(7, 7))
-            self.fig, self.ax = plt.subplots(1, 2, figsize=(14, 7))
-
-    def reset(self, same_start, predefined=False, scen_name=None):
-        self.iteration = 0
-        self.start_time = time.time()
-        first_run = same_start and self.start_nodes is None
-        if predefined:
-            self.start_nodes = get_edge_nodes('starts', scen_name, self.nodes_dict, path='../scens')
-            self.first_goal_nodes = get_edge_nodes('goals', scen_name, self.nodes_dict, path='../scens')
-        elif first_run or not same_start:
-            self.start_nodes = random.sample(self.nodes, self.n_agents)
-            # available_nodes = [node for node in self.nodes if node not in self.start_nodes]
-            # self.first_goal_nodes = random.sample(available_nodes, self.n_agents)
-            self.first_goal_nodes = random.sample(self.nodes, self.n_agents)
-        self._create_agents()
-        observations = self._get_observations([a.name for a in self.agents])
-        return observations
-
-    def sample_actions(self, **kwargs):
-        actions = {}
-        for agent in self.agents:
-            if len(agent.plan) == 0:
-                agent.build_plan(nodes=self.nodes, nodes_dict=self.nodes_dict, h_func=self.h_func)
-            next_node = agent.plan.pop(0)
-            actions[agent.name] = next_node.xy_name
-        return actions
-
-    def _classical_rhcr_mapf_termination(self):
-        if self.classical_rhcr_mapf:
-            if self.iteration >= self.rhcr_mapf_limit:
-                return True, 0
-            end_time = time.time() - self.start_time
-            if end_time >= self.global_time_limit:
-                return True, 0
-            for agent in self.agents:
-                if not agent.reached_the_goal:
-                    return False, 0
-            return True, 1
-        return False, 0
-
-    def _process_single_shot(self, actions):
-        to_continue = True
-        observations, succeeded, termination, info = None, None, None, None
-        if 'one_shot' in actions and actions['one_shot']:
-            to_continue = False
-            succeeded = actions['succeeded']
-            if succeeded:
-                for agent in self.agents:
-                    agent.latest_arrival = actions['latest_arrivals'][agent.name]
-            observations = self._get_observations([])
-            termination, info = True, {}
-        return to_continue, (observations, succeeded, termination, info)
-
-    def step(self, actions):
-        """
-        Events might be:
-        (1) reaching the goal by any agent, and receiving next assignment
-        (2) proceeding to the next moving horizon (h/w in RHCR)
-        (3) a collision
-        (4) no plan for any agent
-        """
-        to_continue, return_values = self._process_single_shot(actions)
-        if not to_continue:
-            observations, succeeded, termination, info = return_values
-            return observations, succeeded, termination, info
-        self.iteration += 1
-        self._execute_actions(actions)
-        agents_names_with_new_goals = self._execute_event_new_goal()
-        observations = self._get_observations(agents_names_with_new_goals)
-        termination, succeeded = self._classical_rhcr_mapf_termination()
-        info = {}
-        return observations, succeeded, termination, info
-
-    def render(self, info):
-        if self.middle_plot and info['i'] >= self.plot_from and info['i'] % self.plot_per == 0:
-            plot_env_field(self.ax[0], info)
-            plot_magnet_agent_view(self.ax[1], info)
-            plt.pause(self.plot_rate)
-        # n_closed_goals = sum([len(agent.closed_goal_nodes) for agent in self.agents])
-        classical_mapf_str = ''
-        if self.classical_rhcr_mapf:
-            n_finished_agents = sum([agent.reached_the_goal for agent in self.agents])
-            time_passed = time.time() - self.start_time
-            classical_mapf_str = f'DONE: {n_finished_agents} / {len(self.agents)}, TIME: {time_passed: .2f}s., '
-        print(f"\n\n[{len(self.agents)}][] "
-              f"PROBLEM: {info['i_problem'] + 1}/{info['n_problems']}, "
-              f"{classical_mapf_str}"
-              f"ITERATION: {info['i'] + 1}\n"
-              f"Total closed goals --------------------------------> \n"
-              f"Total time --------------------------------> {info['runtime']: .2f}s\n")
-
-    def _create_agents(self):
-        self.agents = []
-        for i, (start_node, goal_node) in enumerate(zip(self.start_nodes, self.first_goal_nodes)):
-            new_agent = SimAgent(num=i, start_node=start_node, next_goal_node=goal_node)
-            self.agents.append(new_agent)
-
-    def _get_observations(self, agents_names_with_new_goals):
-        observations = {
-            'agents_names': [agent.name for agent in self.agents],
-            'agents_names_with_new_goals': agents_names_with_new_goals
-        }
-        for agent in self.agents:
-            observations[agent.name] = {
-                'num': agent.num,
-                'curr_node': agent.curr_node,
-                'prev_node': agent.prev_node,
-                'next_goal_node': agent.next_goal_node,
-                'prev_goal_node': agent.prev_goal_node,
-                # 'closed_goal_nodes': agent.closed_goal_nodes,
-                'latest_arrival': agent.latest_arrival,
-                'time_passed_from_last_goal': agent.time_passed_from_last_goal,
-                # 'nei_list': [nei.name for nei in agent.nei_list]
-            }
-        return observations
-
-    def _execute_actions(self, actions):
-        for agent in self.agents:
-            next_node_name = actions[agent.name]
-            agent.prev_node = agent.curr_node
-            agent.curr_node = self.nodes_dict[next_node_name]
-            agent.time_passed_from_last_goal += 1
-            if self.classical_rhcr_mapf:
-                agent.latest_arrival_at_the_goal(self.iteration)
-        # checks
-        check_if_nei_pos(self.agents)
-        check_if_vc(self.agents)
-        check_if_ec(self.agents)
-
-    def _execute_event_new_goal(self):
-        if self.classical_rhcr_mapf:
-            for agent in self.agents:
-                if agent.curr_node.xy_name == agent.next_goal_node.xy_name:
-                    agent.time_passed_from_last_goal = 0
-            return []
-        goals_names_list = [agent.next_goal_node.xy_name for agent in self.agents]
-        available_nodes = [node for node in self.nodes if node.xy_name not in goals_names_list]
-        random.shuffle(available_nodes)
-        agents_names_with_new_goals = []
-        for agent in self.agents:
-            if agent.curr_node.xy_name == (closed_goal := agent.next_goal_node).xy_name:
-                # agent.closed_goal_nodes.append(closed_goal)
-                agent.prev_goal_node = closed_goal
-                new_goal_node = available_nodes.pop()
-                agent.next_goal_node = new_goal_node
-                agent.plan = []
-                agent.time_passed_from_last_goal = 0
-                agents_names_with_new_goals.append(agent.name)
-        return agents_names_with_new_goals
-
-    def close(self):
-        pass
-
-
-def test_single_alg(**kwargs):
-    # --------------------------------------------------- #
-    # params
-    # --------------------------------------------------- #
-
-    # General
-    random_seed = kwargs['random_seed']
-    seed = kwargs['seed']
-    PLOT_PER = kwargs['PLOT_PER']
-    PLOT_RATE = kwargs['PLOT_RATE']
-    middle_plot = kwargs['middle_plot']
-    final_plot = kwargs['final_plot']
-    PLOT_FROM = kwargs['PLOT_FROM'] if 'PLOT_FROM' in kwargs else 0
-
-    # --------------------------------------------------- #
-
-    # For env
-    iterations = kwargs['iterations']
-    n_agents = kwargs['n_agents']
-    n_problems = kwargs['n_problems']
-    classical_rhcr_mapf = kwargs['classical_rhcr_mapf']
-    time_to_think_limit = kwargs['time_to_think_limit']
-    rhcr_mapf_limit = kwargs['rhcr_mapf_limit']
-    global_time_limit = kwargs['global_time_limit']
-    predefined_nodes = kwargs['predefined_nodes'] if 'predefined_nodes' in kwargs else False
-    scen_name = kwargs['scen_name'] if predefined_nodes else None
-
-    # Map
-    img_dir = kwargs['img_dir']
-
-    # for save
-    # to_save_results = True
-    # to_save_results = False
-    # file_dir = f'logs_for_plots/{datetime.now().strftime("%Y-%m-%d--%H-%M")}_MAP-{img_dir[:-4]}.json'
-
-    if classical_rhcr_mapf:
-        iterations = int(1e6)
-    # --------------------------------------------------- #
-    # --------------------------------------------------- #
-
-    # init
-    set_seed(random_seed, seed)
-    env = EnvLifelongMAPF(
-        n_agents=n_agents, img_dir=img_dir,
-        classical_rhcr_mapf=classical_rhcr_mapf, rhcr_mapf_limit=rhcr_mapf_limit, global_time_limit=global_time_limit,
-        plot_per=PLOT_PER, plot_rate=PLOT_RATE, plot_from=PLOT_FROM,
-        middle_plot=middle_plot, final_plot=final_plot,
-    )
-
-    # !!!!!!!!!!!!!!!!!
-    alg = AlgPrP(env, time_to_think_limit=time_to_think_limit)
-
-    start_time = time.time()
-
-    info = {
-        'iterations': iterations,
-        'n_problems': n_problems,
-        'n_agents': n_agents,
-        'img_dir': img_dir,
-        'map_dim': env.map_dim,
-        'img_np': env.img_np,
-    }
-
-    # loop for n_agents
-
-    for i_problem in range(n_problems):
-
-        observations = env.reset(same_start=False, predefined=predefined_nodes, scen_name=scen_name)
-
-        # !!!!!!!!!!!!!!!!!
-        alg.reset()
-
-        # loop for algs
-        # observations = env.reset(same_start=True)
-
-        # main loop
-        for i in range(iterations):
-
-            # !!!!!!!!!!!!!!!!!
-            actions, alg_info = alg.get_actions(observations, iteration=i)  # here is the agents' decision
-
-            # step
-            observations, rewards, termination, step_info = env.step(actions)
-
-            # render
-            info.update(observations)
-            info.update(alg_info)
-            info['i_problem'] = i_problem
-            info['i'] = i
-            info['runtime'] = time.time() - start_time
-            env.render(info)
-
-            # unexpected termination
-            if termination:
-                break
-
-    plt.show()
 
 
 @use_profiler(save_dir='../stats/out_PrP.pstat')

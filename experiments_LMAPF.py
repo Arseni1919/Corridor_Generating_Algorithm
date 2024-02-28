@@ -2,8 +2,10 @@ from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
 from main_show_results import show_results
-from algs.alg_CGA import ALgCGA
 from environments.env_LMAPF import SimEnvLMAPF
+from algs.alg_CGA import ALgCGA
+from algs.out_PrP import AlgPrP
+from algs.out_LNS2 import AlgLNS2
 
 
 def run_the_problem(env: SimEnvLMAPF, obs: dict, alg: Any, max_time: int) -> None:
@@ -22,23 +24,28 @@ def main():
     # set_seed(random_seed_bool=False, seed=123)
     # set_seed(random_seed_bool=True)
     # ---------------------------------------------------- #
-    n_agents_list = [50, 100, 150, 200, 250, 300, 350, 400]
-    # n_agents_list = [100, 200, 300, 400, 500, 600]
-    # n_agents_list = [500, 600, 700, 800, 900, 1000]
+    # n_agents_list = [50, 100, 150, 200, 250, 300, 350, 400]
+    # n_agents_list = [500, 600, 700, 800, 900, 1000]  # empty
+    n_agents_list = [100, 200, 300, 400, 500, 600]  # empty
+    # n_agents_list = [300, 400, 500, 600, 700, 800]  # rand
+    # n_agents_list = [200, 300, 400, 500, 600, 700]  # maze
+    # n_agents_list = [100, 200, 300, 400, 500, 600]  # room
     # n_agents_list = [100, 200]
     # n_agents_list = [1000]
     # ---------------------------------------------------- #
     # max_time = 20
-    max_time = 100
+    max_time = 50
+    # max_time = 100
     # max_time = 200
     # ---------------------------------------------------- #
     k = 5
     # ---------------------------------------------------- #
+    runs_per_n_agents = 2
     # runs_per_n_agents = 5
     # runs_per_n_agents = 15
-    runs_per_n_agents = 25
+    # runs_per_n_agents = 25
     # ---------------------------------------------------- #
-    algorithms = [ALgCGA]
+    algorithms = [ALgCGA, AlgLNS2, AlgPrP]
     # ---------------------------------------------------- #
     time_to_think_limit = 5
     # ---------------------------------------------------- #
@@ -74,8 +81,8 @@ def main():
     logs_dict['time_to_think_limit'] = time_to_think_limit
     logs_dict['max_time'] = max_time
     # ---------------------------------------------------- #
-    # middle_plot = True
-    middle_plot = False
+    middle_plot = True
+    # middle_plot = False
     # ---------------------------------------------------- #
     if middle_plot:
         fig, ax = plt.subplots(1, 2, figsize=(10, 5))
@@ -116,7 +123,7 @@ def main():
                 logs_dict[alg.name][f'{n_agents}']['throughput'].append(sum(map(lambda a: len(a.finished_goals), env.agents)))
 
                 print(f'\n=============================================')
-                print(f'{n_agents=}, {i_run=}, {algorithm.name}')
+                print(f'>>>{algorithm.name}<<< | {n_agents=}, {i_run=}')
                 print(f'=============================================')
                 if middle_plot:
                     plot_throughput(ax[0], logs_dict)

@@ -97,8 +97,8 @@ def params_for_LMAPF():
     is_sacg: bool = False
     # is_sacg: bool = True
 
-    # to_render: bool = True
-    to_render: bool = False
+    to_render: bool = True
+    # to_render: bool = False
 
     # to_check_paths: bool = True
     to_check_paths: bool = False

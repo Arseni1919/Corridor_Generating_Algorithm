@@ -6,7 +6,8 @@ from algs.old_alg_a_star_space_time import a_star_xyt
 from algs.params import *
 from environments.env_LMAPF import SimEnvLMAPF
 from create_animation import do_the_animation
-from out_PrP import AlgPrP, PrPAgent
+from algs.out_PrP import AlgPrP, PrPAgent
+
 
 class LNS2Agent(PrPAgent):
     def __init__(self, num: int, start_node, next_goal_node, **kwargs):
@@ -20,9 +21,13 @@ class AlgLNS2(AlgPrP):
     .reset()
     .get_actions(observations)
     """
+
+    name = 'LNS2'
+
     def __init__(self, env, **kwargs):
         super().__init__(env, **kwargs)
         self.big_N = 5
+
         self.conf_matrix = None
         self.conf_agents_names_list = None
         self.conf_vv_random_walk = None
@@ -115,8 +120,10 @@ class AlgLNS2(AlgPrP):
 
         h_agents = [agent for agent in self.agents if agent not in self.conf_neighbourhood]
         for agent in self.agents:
-            agent.build_plan(h_agents)
+            a_s_info = agent.build_plan(h_agents)
             h_agents.append(agent)
+
+            self.logs['expanded_nodes'] += a_s_info['n_open'] + a_s_info['n_closed']
 
     def _replace_old_plans(self):
         pass
