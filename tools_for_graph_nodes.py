@@ -69,6 +69,8 @@ class Node:
 class ListNodes:
     def __init__(self, target_name=None):
         self.heap_list = []
+        self.heap_names_list = []
+        heapq.heapify(self.heap_names_list)
         # self.nodes_list = []
         self.dict = {}
         self.h_func_bool = False
@@ -82,20 +84,24 @@ class ListNodes:
     def remove(self, node):
         if self.h_func_bool:
             self.heap_list.remove((node.g_dict[self.target_name], node.xy_name))
+            self.heap_names_list.remove(node.xy_name)
             del self.dict[node.xy_name]
             return
         if node.xyt_name not in self.dict:
             raise RuntimeError('node.ID not in self.dict')
         self.heap_list.remove(((node.f, node.h), node.xyt_name))
+        self.heap_names_list.remove(node.xyt_name)
         del self.dict[node.xyt_name]
         # self.nodes_list.remove(node)
 
     def add(self, node):
         if self.h_func_bool:
             heapq.heappush(self.heap_list, (node.g_dict[self.target_name], node.xy_name))
+            heapq.heappush(self.heap_names_list, node.xy_name)
             self.dict[node.xy_name] = node
             return
         heapq.heappush(self.heap_list, ((node.f, node.h), node.xyt_name))
+        heapq.heappush(self.heap_names_list, node.xyt_name)
         self.dict[node.xyt_name] = node
         # self.nodes_list.append(node)
 
@@ -106,6 +112,7 @@ class ListNodes:
             del self.dict[node.xy_name]
             return node
         del self.dict[node.xyt_name]
+        self.heap_names_list.remove(node.xyt_name)
         # self.nodes_list.remove(node)
         return node
 

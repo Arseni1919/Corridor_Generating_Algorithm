@@ -159,7 +159,7 @@ def check_paths(agents: list, from_iteration: int = 1) -> None:
 
 def plan_has_no_conf_with_vertex(plan, vertex):
     for plan_v in plan:
-        if plan_v.xy_name == vertex.xy_name:
+        if plan_v.x == vertex.x and plan_v.y == vertex.y:
             return False
     return True
 
@@ -171,12 +171,13 @@ def two_plans_have_no_confs(plan1, plan2):
     prev1 = None
     prev2 = None
     for i, (vertex1, vertex2) in enumerate(zip(plan1[:min_len], plan2[:min_len])):
-        if vertex1 == vertex2:
+        if vertex1.x == vertex2.x and vertex1.y == vertex2.y:
             return False
         if i > 0:
             # edge1 = (prev1.xy_name, vertex1.xy_name)
             # edge2 = (vertex2.xy_name, prev2.xy_name)
-            if (prev1.xy_name, vertex1.xy_name) == (vertex2.xy_name, prev2.xy_name):
+            # if (prev1.x, prev1.y, vertex1.x, vertex1.y) == (vertex2.x, vertex2.y, prev2.x, prev2.y):
+            if prev1.x == vertex2.x and prev1.y == vertex2.y and vertex1.x == prev2.x and vertex1.y == prev2.y:
                 return False
         prev1 = vertex1
         prev2 = vertex2

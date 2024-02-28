@@ -44,8 +44,8 @@ def get_node(successor_xy_name, node_current, nodes, nodes_dict, open_nodes, clo
             return None, ''
     new_t = node_current.t + 1
 
-    if successor_xy_name not in nodes_dict:
-        return None, ''
+    # if successor_xy_name not in nodes_dict:
+    #     return None, ''
 
     if v_constr_dict:
         if new_t in v_constr_dict[successor_xy_name]:
@@ -68,9 +68,9 @@ def get_node(successor_xy_name, node_current, nodes, nodes_dict, open_nodes, clo
             new_t = max_final_time + 1
 
     new_xyt_name = f'{successor_xy_name}_{new_t}'
-    if new_xyt_name in open_nodes.dict:
+    if new_xyt_name in open_nodes.heap_names_list:
         return open_nodes.dict[new_xyt_name], 'open_nodes'
-    if new_xyt_name in closed_nodes.dict:
+    if new_xyt_name in closed_nodes.heap_names_list:
         return closed_nodes.dict[new_xyt_name], 'closed_nodes'
 
     node = nodes_dict[successor_xy_name]
@@ -127,7 +127,7 @@ def a_star_xyt(start, goal, nodes, h_func,
         iteration += 1
         if iteration > iter_limit:
             print(f'\n[ERROR]: out of iterations (more than {iteration})')
-            return None, {'runtime': time.time() - start_time, 'n_open': len(open_nodes.heap_list), 'n_closed': len(closed_nodes.heap_list)}
+            return None, {'runtime': time.time() - start_time, 'n_open': len(open_nodes), 'n_closed': len(closed_nodes)}
         node_current = open_nodes.pop()
 
         time_check = k_time_check(node_current, **kwargs)
