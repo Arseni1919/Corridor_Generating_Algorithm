@@ -156,7 +156,7 @@ class SimEnvLMAPF:
 
     def _execute_actions(self, actions: Dict[str, str]) -> None:
         for agent in self.agents:
-        # for agent_name, next_node_name in actions.items():
+            # for agent_name, next_node_name in actions.items():
             next_node_name = actions[agent.name]
             next_node = self.nodes_dict[next_node_name]
             agent.prev_node = agent.curr_node
@@ -183,6 +183,7 @@ class SimEnvLMAPF:
         obs['iteration'] = self.iteration
         obs['start_nodes_names'] = self.start_nodes_names
         obs['agents_names'] = self.agents_names
+        obs['agents_names_with_new_goals'] = [a.name for a in self.agents if a.arrived]
         return obs
 
     def _get_metrics(self) -> dict:

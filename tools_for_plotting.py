@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 from globals import *
@@ -427,6 +428,7 @@ def plot_sr(ax, info):
     set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
                    size=11)
     set_legend(ax, size=17)
+    plt.tight_layout()
 
 
 def plot_soc(ax, info):
@@ -569,6 +571,7 @@ def plot_en_metric_cactus(ax, info):
     set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
                    size=11)
     set_legend(ax, size=17)
+    plt.tight_layout()
 
 
 def plot_sq_metric_cactus(ax, info):

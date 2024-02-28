@@ -42,8 +42,8 @@ def params_for_SACG():
     # corridor_size = 2
     corridor_size = 1
 
-    to_render: bool = True
-    # to_render: bool = False
+    # to_render: bool = True
+    to_render: bool = False
 
     # is_sacg: bool = False
     is_sacg: bool = True
@@ -63,11 +63,11 @@ def params_for_LMAPF():
     # N = 50
     # N = 100
     # N = 150
-    # N = 200
+    N = 200
     # N = 250
     # N = 300
     # N = 400
-    N = 500
+    # N = 500
     # N = 600
     # N = 620
     # N = 700
@@ -97,8 +97,8 @@ def params_for_LMAPF():
     is_sacg: bool = False
     # is_sacg: bool = True
 
-    to_render: bool = True
-    # to_render: bool = False
+    # to_render: bool = True
+    to_render: bool = False
 
     # to_check_paths: bool = True
     to_check_paths: bool = False
