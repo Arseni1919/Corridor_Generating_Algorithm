@@ -28,15 +28,17 @@ def show_results(file_dir: str, lmapf: bool = False) -> None:
 
 
 def main():
-    # file_dir = '2024-02-27--15-04_ALGS-2_RUNS-5_MAP-room-32-32-4.json'
-    # show_results(file_dir=f'logs_for_plots/{file_dir}')
+    # file_dir = '2024-02-29--02-08_ALGS-1_RUNS-25_MAP-empty-32-32.json'
+    # file_dir = '2024-02-29--05-25_ALGS-1_RUNS-25_MAP-random-32-32-20.json'
+    file_dir = '2024-02-29--10-50_ALGS-1_RUNS-25_MAP-maze-32-32-4.json'
+    show_results(file_dir=f'logs_for_plots/{file_dir}', lmapf=True)
 
     # SACG
     # file_dir = 'SACG_2024-02-27--16-18_ALGS-2_RUNS-25_MAP-empty-32-32.json'
     # file_dir = 'SACG_2024-02-27--16-44_ALGS-2_RUNS-25_MAP-random-32-32-20.json'
     # file_dir = 'SACG_2024-02-27--17-14_ALGS-2_RUNS-25_MAP-maze-32-32-4.json'
-    file_dir = 'SACG_2024-02-27--15-39_ALGS-2_RUNS-25_MAP-room-32-32-4.json'
-    show_results(file_dir=f'final_logs/{file_dir}')
+    # file_dir = 'SACG_2024-02-27--15-39_ALGS-2_RUNS-25_MAP-room-32-32-4.json'
+    # show_results(file_dir=f'final_logs/{file_dir}')
 
     # LMAPF
     # file_dir = ''

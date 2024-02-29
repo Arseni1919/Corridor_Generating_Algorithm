@@ -26,33 +26,35 @@ def main():
     # ---------------------------------------------------- #
     # n_agents_list = [50, 100, 150, 200, 250, 300, 350, 400]
     # n_agents_list = [500, 600, 700, 800, 900, 1000]  # empty
-    n_agents_list = [100, 200, 300, 400, 500, 600]  # empty
-    # n_agents_list = [300, 400, 500, 600, 700, 800]  # rand
-    # n_agents_list = [200, 300, 400, 500, 600, 700]  # maze
-    # n_agents_list = [100, 200, 300, 400, 500, 600]  # room
+    # n_agents_list = [100, 200, 300, 400, 500, 600, 700, 800, 900]  # empty
+    # n_agents_list = [100, 200, 300, 400, 500, 600, 700, 800]  # rand
+    # n_agents_list = [100, 200, 300, 400, 500, 600, 700]  # maze
+    n_agents_list = [100, 200, 300, 400, 500, 600]  # room
     # n_agents_list = [100, 200]
     # n_agents_list = [1000]
     # ---------------------------------------------------- #
     # max_time = 20
-    max_time = 50
-    # max_time = 100
+    # max_time = 50
+    max_time = 100
     # max_time = 200
     # ---------------------------------------------------- #
     k = 5
     # ---------------------------------------------------- #
-    runs_per_n_agents = 2
+    # runs_per_n_agents = 2
     # runs_per_n_agents = 5
     # runs_per_n_agents = 15
-    # runs_per_n_agents = 25
+    # runs_per_n_agents = 15
+    runs_per_n_agents = 25
     # ---------------------------------------------------- #
-    algorithms = [ALgCGA, AlgLNS2, AlgPrP]
+    # algorithms = [ALgCGA, AlgLNS2, AlgPrP]
+    algorithms = [ALgCGA]
     # ---------------------------------------------------- #
     time_to_think_limit = 5
     # ---------------------------------------------------- #
-    img_dir = 'empty-32-32.map'
+    # img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-20.map'
     # img_dir = 'maze-32-32-4.map'
-    # img_dir = 'room-32-32-4.map'
+    img_dir = 'room-32-32-4.map'
 
     # img_dir = '10_10_my_rand.map'
     # img_dir = 'random-32-32-10.map'
@@ -64,6 +66,16 @@ def main():
     # ---------------------------------------------------- #
     to_check_collisions = False
     # to_check_collisions = True
+    # ---------------------------------------------------- #
+    # middle_plot = True
+    middle_plot = False
+    # ---------------------------------------------------- #
+    if middle_plot:
+        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    # ---------------------------------------------------- #
+    path_to_maps = 'maps'
+    # ---------------------------------------------------- #
+    path_to_heuristics = 'logs_for_heuristics'
     # ---------------------------------------------------- #
     logs_dict: Dict[str, Any] = {
         alg.name: {
@@ -80,16 +92,6 @@ def main():
     logs_dict['img_dir'] = img_dir
     logs_dict['time_to_think_limit'] = time_to_think_limit
     logs_dict['max_time'] = max_time
-    # ---------------------------------------------------- #
-    middle_plot = True
-    # middle_plot = False
-    # ---------------------------------------------------- #
-    if middle_plot:
-        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-    # ---------------------------------------------------- #
-    path_to_maps = 'maps'
-    # ---------------------------------------------------- #
-    path_to_heuristics = 'logs_for_heuristics'
     # ---------------------------------------------------- #
 
     env = SimEnvLMAPF(img_dir=img_dir, is_sacg=False, path_to_maps=path_to_maps, path_to_heuristics=path_to_heuristics,
@@ -123,6 +125,7 @@ def main():
                 logs_dict[alg.name][f'{n_agents}']['throughput'].append(sum(map(lambda a: len(a.finished_goals), env.agents)))
 
                 print(f'\n=============================================')
+                print('^'*40)
                 print(f'>>>{algorithm.name}<<< | {n_agents=}, {i_run=}')
                 print(f'=============================================')
                 if middle_plot:
