@@ -143,6 +143,7 @@ def main():
             algorithms=algorithms, runs_per_n_agents=runs_per_n_agents, img_dir=img_dir, logs_dict=logs_dict
         )
         show_results(file_dir=file_dir, lmapf=True)
+    plt.show()
     # final print
     print('\n###################################################')
     print('###################################################')
