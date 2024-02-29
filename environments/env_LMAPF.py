@@ -232,6 +232,7 @@ def main():
     total_finished_goals_list = []
 
     # the run
+    metrics = {}
     obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], max_time=max_time, corridor_size=corridor_size)
     for i_step in range(max_time):
         actions = env.sample_actions()  # alg part
