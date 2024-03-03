@@ -1,19 +1,23 @@
+import matplotlib.pyplot as plt
+
 from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
 from main_show_results import show_results
 from algs.alg_SACG_PrP import ALgPrPSACG
 from algs.alg_CGA import ALgCGA
+from algs.alg_PIBT import AlgPIBT
 from environments.env_LMAPF import SimEnvLMAPF
 
 
-def run_the_problem(env: SimEnvLMAPF, obs: dict, alg: ALgCGA | ALgPrPSACG) -> None:
-    for i_step in range(10000):
+def run_the_problem(env: SimEnvLMAPF, obs: dict, alg: ALgCGA | ALgPrPSACG) -> bool:
+    for i_step in range(1000):
         actions = alg.get_actions(obs)  # alg part
         obs, metrics, terminated, info = env.step(actions)
 
         if terminated:
-            break
+            return True
+    return False
 
 
 @use_profiler(save_dir='stats/experiments_SACG.pstat')
@@ -26,16 +30,18 @@ def main():
     # n_agents_list = [50, 100, 150, 200, 250, 300, 350, 400]
     # n_agents_list = [500, 600, 700, 800, 900, 1000]  # empty
     # n_agents_list = [300, 400, 500, 600, 700, 800]  # rand
-    n_agents_list = [200, 300, 400, 500, 600, 700]  # maze
+    # n_agents_list = [200, 300, 400, 500, 600, 700]  # maze
     # n_agents_list = [100, 200, 300, 400, 500, 600]  # room
     # n_agents_list = [100, 200]
-    # n_agents_list = [700]
+    n_agents_list = [700]
     # ---------------------------------------------------- #
+    # runs_per_n_agents = 2
     # runs_per_n_agents = 5
     # runs_per_n_agents = 15
     runs_per_n_agents = 25
     # ---------------------------------------------------- #
-    algorithms = [ALgPrPSACG, ALgCGA]
+    # algorithms = [ALgPrPSACG, AlgPIBT, ALgCGA]
+    algorithms = [AlgPIBT, ALgCGA]
     # ---------------------------------------------------- #
     time_to_think_limit = 5
     # ---------------------------------------------------- #
@@ -49,8 +55,8 @@ def main():
     # img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
     # ---------------------------------------------------- #
-    to_save_results = True
-    # to_save_results = False
+    # to_save_results = True
+    to_save_results = False
     # ---------------------------------------------------- #
     to_check_collisions = False
     # to_check_collisions = True
@@ -71,8 +77,8 @@ def main():
     logs_dict['img_dir'] = img_dir
     logs_dict['time_to_think_limit'] = time_to_think_limit
     # ---------------------------------------------------- #
-    # middle_plot = True
-    middle_plot = False
+    middle_plot = True
+    # middle_plot = False
     # ---------------------------------------------------- #
     if middle_plot:
         fig, ax = plt.subplots(1, 3, figsize=(14, 4))
@@ -106,7 +112,7 @@ def main():
 
                 if solved:
                     # run the problem
-                    run_the_problem(env, obs, alg)
+                    solved = run_the_problem(env, obs, alg)
 
                 # logs
                 logs_dict[alg.name][f'{n_agents}']['sr'].append(solved)
@@ -130,6 +136,7 @@ def main():
             algorithms=algorithms, runs_per_n_agents=runs_per_n_agents, img_dir=img_dir, logs_dict=logs_dict
         )
         show_results(file_dir=file_dir)
+    plt.show()
     # final print
     print('\n###################################################')
     print('###################################################')

@@ -90,7 +90,7 @@ class ALgCGA:
         self.next_iteration: int = 0
 
         self.global_order: List[AlgCGAAgent] = []
-        self.logs: dict = {}
+        self.logs: dict | None = None
 
     def initiate_problem(self, obs: dict) -> bool:
         self.start_nodes = [self.nodes_dict[s_name] for s_name in obs['start_nodes_names']]

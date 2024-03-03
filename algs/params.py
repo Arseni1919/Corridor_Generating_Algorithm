@@ -16,8 +16,8 @@ def params_for_SACG():
     # N = 500
     # N = 600
     # N = 620
-    # N = 700
-    N = 750
+    N = 700
+    # N = 750
     # N = 800
     # N = 850
     # N = 900
@@ -34,7 +34,7 @@ def params_for_SACG():
     # max_time = 20
     # max_time = 100
     # max_time = 200
-    max_time = 1000
+    max_time = 10000
     # corridor_size = 20
     # corridor_size = 10
     # corridor_size = 5
@@ -98,8 +98,8 @@ def params_for_LMAPF():
     is_sacg: bool = False
     # is_sacg: bool = True
 
-    # to_render: bool = True
-    to_render: bool = False
+    to_render: bool = True
+    # to_render: bool = False
 
     # to_check_paths: bool = True
     to_check_paths: bool = False

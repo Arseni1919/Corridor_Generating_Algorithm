@@ -4,7 +4,7 @@ from tools_for_graph_nodes import *
 from main_show_results import show_results
 from environments.env_LMAPF import SimEnvLMAPF
 from algs.alg_CGA import ALgCGA
-from algs.alg_PIBT import AlgPIBT
+from algs.alg_CGAcor1 import AlgCGAcor1
 from algs.out_PrP import AlgPrP
 from algs.out_LNS2 import AlgLNS2
 
@@ -50,7 +50,7 @@ def main():
     # ---------------------------------------------------- #
     # algorithms = [ALgCGA, AlgLNS2, AlgPrP]
     # algorithms = [ALgCGA]
-    algorithms = [ALgCGA, AlgPIBT]
+    algorithms = [ALgCGA, AlgCGAcor1]
     # ---------------------------------------------------- #
     time_to_think_limit = 5
     # ---------------------------------------------------- #
