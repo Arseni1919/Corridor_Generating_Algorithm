@@ -420,7 +420,8 @@ class ALgCGA:
                                            self.freedom_nodes_np, self.corridor_size, node_name_to_f_agent_heap)
             # corridor = calc_simple_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
             # corridor = calc_a_star_corridor(agent, self.nodes_dict, self.h_dict, self.corridor_size, new_map)
-            self.logs['expanded_nodes'] += len(corridor)
+            # self.logs['expanded_nodes'] += len(corridor)
+            self.logs['expanded_nodes'] += 1
             # if a corridor just a single node (that means it only contains the current location), then return False
             assert len(corridor) != 0
             if len(corridor) == 1:

@@ -4,7 +4,7 @@ from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
 from main_show_results import show_results
-from algs.alg_SACG_PrP import ALgPrPSACG
+from algs.alg_PrP_SACG import ALgPrPSACG
 from algs.alg_CGA import ALgCGA
 from algs.alg_PIBT import AlgPIBT
 from environments.env_LMAPF import SimEnvLMAPF

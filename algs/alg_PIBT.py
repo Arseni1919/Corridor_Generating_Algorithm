@@ -11,6 +11,16 @@ from algs.params import *
 from algs.alg_CGA import ALgCGA, AlgCGAAgent
 
 
+def get_vc_ac_sets(planned_agents: List[AlgCGAAgent], next_iteration: int) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int, int, int]]]:
+    vc_set, ec_set = [], []
+    for agent in planned_agents:
+        curr_node = agent.path[next_iteration - 1]
+        next_node = agent.path[next_iteration]
+        vc_set.append((next_node.x, next_node.y))
+        ec_set.append((curr_node.x, curr_node.y, next_node.x, next_node.y))
+    return vc_set, ec_set
+
+
 def pibt_func(agent: AlgCGAAgent,
               h_dict: Dict[str, np.ndarray],
               nodes_dict: Dict[str, Node],
@@ -102,7 +112,8 @@ class AlgPIBT(ALgCGA):
             if agent.curr_node == agent.next_goal_node:
                 continue
 
-            vc_set, ec_set = [], []
+            planned_agents = list(filter(lambda a: len(a.path[self.next_iteration:]) > 0, self.agents))
+            vc_set, ec_set = get_vc_ac_sets(planned_agents, self.next_iteration)
             node_name_to_agent_dict = {a.curr_node.xy_name: a for a in self.agents}
             node_name_to_agent_list = list(node_name_to_agent_dict.keys())
             heapq.heapify(node_name_to_agent_list)
@@ -110,7 +121,8 @@ class AlgPIBT(ALgCGA):
                                vc_set=vc_set, ec_set=ec_set,
                                node_name_to_agent_dict=node_name_to_agent_dict,
                                node_name_to_agent_list=node_name_to_agent_list,
-                               next_iteration=self.next_iteration, logs=self.logs)
+                               next_iteration=self.next_iteration,
+                               logs=self.logs)
 
         # others stay on place
         for agent in self.agents:
@@ -124,9 +136,9 @@ class AlgPIBT(ALgCGA):
 @use_profiler(save_dir='../stats/alg_PIBT.pstat')
 def main():
     # SACG
-    N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_SACG()
+    # N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_SACG()
     # LMAPF
-    # N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_LMAPF()
+    N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_LMAPF()
 
     # problem creation
     env = SimEnvLMAPF(img_dir=img_dir, is_sacg=is_sacg)
