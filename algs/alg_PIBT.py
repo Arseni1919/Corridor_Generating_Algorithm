@@ -18,6 +18,8 @@ def get_vc_ac_sets(planned_agents: List[AlgCGAAgent], next_iteration: int) -> Tu
         next_node = agent.path[next_iteration]
         vc_set.append((next_node.x, next_node.y))
         ec_set.append((curr_node.x, curr_node.y, next_node.x, next_node.y))
+    heapq.heapify(vc_set)
+    heapq.heapify(ec_set)
     return vc_set, ec_set
 
 
