@@ -18,6 +18,10 @@ class SimAgentLMAPF:
         self.unique_moves: List[Node] = []
         self.finished_goals: List[Node] = []
         self.arrived: bool = False
+        self.waiting_to_the_goal = 0
+        self.max_waiting_to_the_goal = 0
+        # self.waiting_times = []
+        self.stuck_count = 0
 
     @property
     def name(self):
@@ -122,7 +126,8 @@ class SimEnvLMAPF:
             if o_agent.next_goal_node:
                 occupied_nodes_odict[o_agent.next_goal_node.xy_name] = o_agent.next_goal_node
 
-        possible_nodes: List[Node] = [n for n in self.nodes if n.xy_name not in occupied_nodes_odict]
+        # possible_nodes: List[Node] = [n for n in self.nodes if n.xy_name not in occupied_nodes_odict]
+        possible_nodes: List[Node] = [n for n in self.nodes]
         next_goal_node: Node = random.choice(possible_nodes)
         while next_goal_node == curr_agent.curr_node:
             next_goal_node: Node = random.choice(possible_nodes)
@@ -142,6 +147,10 @@ class SimEnvLMAPF:
             if agent.arrived:
                 agent.finished_goals.append(agent.next_goal_node)
                 self.assign_next_goal(agent)
+                agent.max_waiting_to_the_goal = max(agent.max_waiting_to_the_goal, agent.waiting_to_the_goal)
+                agent.waiting_to_the_goal = 0
+            else:
+                agent.waiting_to_the_goal += 1
 
     def _check_solvability(self):
         assert len(self.nodes) - len(self.start_nodes) >= self.corridor_size
@@ -165,6 +174,8 @@ class SimEnvLMAPF:
             agent.path.append(agent.curr_node)
             if agent.prev_node.xy_name != agent.curr_node.xy_name:
                 agent.unique_moves.append(agent.curr_node)
+            else:
+                agent.stuck_count += 1
         # checks
         if self.to_check_collisions:
             check_vc_ec_neic(self.agents)

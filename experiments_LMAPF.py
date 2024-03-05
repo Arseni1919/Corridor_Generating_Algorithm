@@ -7,6 +7,7 @@ from algs.alg_CGA import ALgCGA
 from algs.alg_CGAcor1 import AlgCGAcor1
 from algs.out_PrP import AlgPrP
 from algs.out_LNS2 import AlgLNS2
+from algs.alg_PIBT import AlgPIBT
 
 
 def run_the_problem(env: SimEnvLMAPF, obs: dict, alg: Any, max_time: int) -> None:
@@ -29,40 +30,42 @@ def main():
     # n_agents_list = [500, 600, 700, 800, 900, 1000]  # empty
     # n_agents_list = [100, 200, 300, 400, 500, 600, 700, 800, 900]  # empty
     # n_agents_list = [100, 200, 300, 400, 500, 600, 700, 800]  # rand
-    n_agents_list = [100, 200, 300, 400, 500, 600, 700]  # maze
+    # n_agents_list = [100, 200, 300, 400, 500, 600, 700]  # maze
     # n_agents_list = [100, 200, 300, 400, 500, 600]  # room
     # n_agents_list = [100, 200, 300, 400, 500, 600]  # maze 32-32-2
     # n_agents_list = [100, 200]
-    # n_agents_list = [600]
+    n_agents_list = [20, 40, 60, 80, 100]
+    # ---------------------------------------------------- #
+    # img_dir = 'empty-32-32.map'
+    # img_dir = 'random-32-32-20.map'
+    # img_dir = 'maze-32-32-4.map'
+    # img_dir = 'room-32-32-4.map'
+
+    img_dir = '15-15-four-rooms.map'
+    # img_dir = '10_10_my_rand.map'
+    # img_dir = 'random-32-32-10.map'
+    # img_dir = 'maze-32-32-2.map'
+    # img_dir = 'random-64-64-20.map'
     # ---------------------------------------------------- #
     # max_time = 20
     # max_time = 50
-    max_time = 100
-    # max_time = 200
+    # max_time = 100
+    max_time = 200
     # ---------------------------------------------------- #
     k = 5
     # ---------------------------------------------------- #
-    runs_per_n_agents = 2
-    # runs_per_n_agents = 5
+    # runs_per_n_agents = 2
+    runs_per_n_agents = 5
     # runs_per_n_agents = 15
     # runs_per_n_agents = 15
     # runs_per_n_agents = 25
     # ---------------------------------------------------- #
     # algorithms = [ALgCGA, AlgLNS2, AlgPrP]
     # algorithms = [ALgCGA]
-    algorithms = [ALgCGA, AlgCGAcor1]
+    # algorithms = [ALgCGA, AlgCGAcor1]
+    algorithms = [AlgPIBT, ALgCGA]
     # ---------------------------------------------------- #
     time_to_think_limit = 5
-    # ---------------------------------------------------- #
-    # img_dir = 'empty-32-32.map'
-    # img_dir = 'random-32-32-20.map'
-    img_dir = 'maze-32-32-4.map'
-    # img_dir = 'room-32-32-4.map'
-
-    # img_dir = '10_10_my_rand.map'
-    # img_dir = 'random-32-32-10.map'
-    # img_dir = 'maze-32-32-2.map'
-    # img_dir = 'random-64-64-20.map'
     # ---------------------------------------------------- #
     # to_save_results = True
     to_save_results = False
@@ -86,6 +89,7 @@ def main():
                 'runtime': [],
                 'throughput': [],
                 'expanded_nodes': [],
+                'max_waiting': [],
             } for n_agents in n_agents_list
         } for alg in algorithms
     }
@@ -126,6 +130,7 @@ def main():
                 logs_dict[alg.name][f'{n_agents}']['runtime'].append(alg.logs['runtime'])
                 logs_dict[alg.name][f'{n_agents}']['expanded_nodes'].append(alg.logs['expanded_nodes'])
                 logs_dict[alg.name][f'{n_agents}']['throughput'].append(sum(map(lambda a: len(a.finished_goals), env.agents)))
+                logs_dict[alg.name][f'{n_agents}']['max_waiting'].append(sum(map(lambda a: a.stuck_count, env.agents)))
 
                 print(f'\n=============================================')
                 print('^'*40)
@@ -133,10 +138,11 @@ def main():
                 print(f'=============================================')
                 if middle_plot:
                     plot_throughput(ax[0], logs_dict)
+                    plot_max_waiting(ax[1], logs_dict)
                     # plot_time_metric_cactus(ax[1], logs_dict)
                     # plot_sq_metric_cactus(ax[1], logs_dict)
-                    plot_en_metric_cactus(ax[1], logs_dict)
-                    plt.pause(0.001)
+                    # plot_en_metric_cactus(ax[1], logs_dict)
+                    plt.pause(0.01)
 
     if to_save_results:
         file_dir = save_results(

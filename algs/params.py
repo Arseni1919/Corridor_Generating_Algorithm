@@ -62,27 +62,34 @@ def params_for_LMAPF():
     # set_seed(random_seed_bool=True)
     # N = 50
     # N = 100
+    # N = 140
     # N = 150
     # N = 200
+    # N = 170
     # N = 250
     # N = 300
     # N = 400
     # N = 500
     # N = 600
-    # N = 620
-    N = 700
+    N = 620
+    # N = 700
     # N = 750
+    # N = 800
     # N = 850
     # N = 900
 
     # img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-20.map'
-    img_dir = 'maze-32-32-4.map'
+    # img_dir = 'maze-32-32-4.map'
     # img_dir = 'room-32-32-4.map'
 
+    # img_dir = '15-15-two-rooms.map'
+    # img_dir = '15-15-four-rooms.map'
+    # img_dir = '15-15-six-rooms.map'
+    # img_dir = '15-15-eight-rooms.map'
     # img_dir = '10_10_my_rand.map'
     # img_dir = 'random-32-32-10.map'
-    # img_dir = 'maze-32-32-2.map'
+    img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
     # max_time = 20
     max_time = 100
@@ -98,8 +105,8 @@ def params_for_LMAPF():
     is_sacg: bool = False
     # is_sacg: bool = True
 
-    # to_render: bool = True
-    to_render: bool = False
+    to_render: bool = True
+    # to_render: bool = False
 
     # to_check_paths: bool = True
     to_check_paths: bool = False

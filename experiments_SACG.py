@@ -30,15 +30,15 @@ def main():
     # n_agents_list = [50, 100, 150, 200, 250, 300, 350, 400]
     # n_agents_list = [500, 600, 700, 800, 900, 1000]  # empty
     # n_agents_list = [300, 400, 500, 600, 700, 800]  # rand
-    # n_agents_list = [200, 300, 400, 500, 600, 700]  # maze
+    n_agents_list = [200, 300, 400, 500, 600, 700]  # maze
     # n_agents_list = [100, 200, 300, 400, 500, 600]  # room
     # n_agents_list = [100, 200]
-    n_agents_list = [700]
+    # n_agents_list = [700]
     # ---------------------------------------------------- #
-    # runs_per_n_agents = 2
+    runs_per_n_agents = 2
     # runs_per_n_agents = 5
     # runs_per_n_agents = 15
-    runs_per_n_agents = 25
+    # runs_per_n_agents = 25
     # ---------------------------------------------------- #
     # algorithms = [ALgPrPSACG, AlgPIBT, ALgCGA]
     algorithms = [AlgPIBT, ALgCGA]
@@ -81,7 +81,7 @@ def main():
     # middle_plot = False
     # ---------------------------------------------------- #
     if middle_plot:
-        fig, ax = plt.subplots(1, 3, figsize=(14, 4))
+        fig, ax = plt.subplots(1, 3, figsize=(15, 5))
     # ---------------------------------------------------- #
     path_to_maps = 'maps'
     # ---------------------------------------------------- #
@@ -119,7 +119,7 @@ def main():
                 if solved:
                     logs_dict[alg.name][f'{n_agents}']['runtime'].append(alg.logs['runtime'])
                     logs_dict[alg.name][f'{n_agents}']['expanded_nodes'].append(alg.logs['expanded_nodes'])
-                    logs_dict[alg.name][f'{n_agents}']['sq'].append(len(alg.agents_dict['agent_0'].path))
+                    logs_dict[alg.name][f'{n_agents}']['sq'].append(sum([len(a.unique_moves) for a in env.agents]))
 
                 print(f'\n=============================================')
                 print(f'{n_agents=}, {i_run=}, {algorithm.name}')

@@ -649,6 +649,30 @@ def plot_throughput(ax, info):
     set_legend(ax, size=11)
 
 
+def plot_max_waiting(ax, info):
+    ax.cla()
+    alg_names = info['alg_names']
+    n_agents_list = info['n_agents_list']
+    img_dir = info['img_dir']
+    time_to_think_limit = info['time_to_think_limit']
+    max_time = info['max_time']
+
+    for i_alg in alg_names:
+        y_list = []
+        for n_a in n_agents_list:
+            y_list.append(np.mean(info[i_alg][f'{n_a}']['max_waiting']))
+        ax.plot(n_agents_list, y_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
+                alpha=0.5, label=f'{i_alg}', linewidth=3, markersize=13)
+    ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
+    ax.set_xticks(n_agents_list)
+    ax.set_xlabel('N agents', fontsize=15)
+    ax.set_ylabel('Maximum Waiting', fontsize=15)
+    # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec. | {iterations} iters.')
+    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec. | {max_time} steps.',
+                   size=11)
+    set_legend(ax, size=11)
+
+
 def plot_lmapf_time(ax, info):
     ax.cla()
     alg_names = info['alg_names']

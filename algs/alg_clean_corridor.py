@@ -223,8 +223,8 @@ def get_agents_in_corridor(corridor: List[Node], node_name_to_f_agent_dict, node
 
 
 def get_tube(
-        c_agent, new_map: np.ndarray, tubes: List[Tube], corridor_for_c_agents: List[Node],
-        nodes_dict: Dict[str, Node], node_name_to_f_agent_heap: list, to_assert: bool,
+        c_agent, h_dict: np.ndarray, new_map: np.ndarray, tubes: List[Tube], corridor_for_c_agents: List[Node],
+        nodes_dict: Dict[str, Node], node_name_to_f_agent_heap: list, to_assert: bool
 ) -> Tuple[bool, Tube | None, dict]:
     """
     - get a list of captured_free_nodes that are already taken by other agents
@@ -232,6 +232,7 @@ def get_tube(
     - if no more nodes to search return False and None
     - if there is a free node, create a Tube for it and return True, Tube
     :param c_agent:
+    :param h_dict:
     :param new_map:
     :param tubes:
     :param corridor_for_c_agents:
@@ -249,13 +250,20 @@ def get_tube(
 
     spanning_tree_dict: Dict[str, str | None] = {c_agent.curr_node.xy_name: None}
     open_list: Deque[Node] = deque([c_agent.curr_node])
+    open_list_heap: List[str] = [c_agent.curr_node.xy_name]
+    heapq.heapify(open_list_heap)
+    curr_h_dict = h_dict[c_agent.curr_node.xy_name]
+    # open_list_heap: List[Tuple[int, Node]] = [(int(curr_h_dict[c_agent.curr_node.x, c_agent.curr_node.y]), c_agent.curr_node)]
+    # heapq.heapify(open_list_heap)
     closed_list_heap: List[str] = []
     heapq.heapify(closed_list_heap)
     small_iteration: int = 0
     while len(open_list) > 0:
         small_iteration += 1
 
-        selected_node = open_list.pop()
+        selected_node = open_list.popleft()
+        open_list_heap.remove(selected_node.xy_name)
+        # h_v, selected_node = open_list_heap.pop()
         if selected_node not in corridor_for_c_agents and selected_node.xy_name not in node_name_to_f_agent_heap and selected_node.xy_name not in captured_free_nodes_heap:
             nodes, tube_pattern = get_full_tube(selected_node, spanning_tree_dict, nodes_dict, node_name_to_f_agent_heap)
             tube = Tube(nodes, selected_node, tube_pattern)
@@ -263,30 +271,36 @@ def get_tube(
 
         # corridor_nodes: List[Node] = []
         # outer_nodes: List[Node] = []
-        nei_nodes: List[Node] = []
+        nei_nodes: List[Tuple[int, Node]] = []
         for nei_name in selected_node.neighbours:
             if nei_name == selected_node.xy_name:
                 continue
             nei_node = nodes_dict[nei_name]
+            nei_h = int(curr_h_dict[nei_node.x, nei_node.y])
             # 1 - free space, 0 - occupied space
             if new_map[nei_node.x, nei_node.y] == 0:
                 continue
             if nei_node.xy_name in closed_list_heap:
                 continue
-            if nei_node in open_list:
+            if nei_node.xy_name in open_list_heap:
                 continue
             # connect nei_note to selected one
             spanning_tree_dict[nei_node.xy_name] = selected_node.xy_name
-            nei_nodes.append(nei_node)
+            nei_nodes.append((nei_h, nei_node))
             # if nei_node in corridor_for_c_agents:
             #     corridor_nodes.append(nei_node)
             # else:
             #     outer_nodes.append(nei_node)
         random.shuffle(nei_nodes)
-        open_list.extendleft(nei_nodes)
+        heapq.heapify(nei_nodes)
+        # nei_nodes
+        for nei_h, nei_node in nei_nodes:
+            open_list.append(nei_node)
+            heapq.heappush(open_list_heap, nei_node.xy_name)
+        # open_list.extendleft(nei_nodes)
         # open_list.extendleft(outer_nodes)
         # open_list.extendleft(corridor_nodes)
-        closed_list_heap.append(selected_node.xy_name)
+        heapq.heappush(closed_list_heap, selected_node.xy_name)
     return False, None, {'closed_list': closed_list_heap, 'open_list': open_list}
 
 

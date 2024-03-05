@@ -454,8 +454,9 @@ class ALgCGA:
             tubes_are_good: bool = True
             for c_agent in c_agents:
                 # try to create a tube + free_node for c_agent (a new free_node must be different from other free_nodes)
+                # c_agent_h_dict = self.h_dict[c_agent.next_goal_node.xy_name]
                 solvable, tube, get_tube_info = get_tube(
-                    c_agent, new_map, tubes, corridor_for_c_agents, self.nodes_dict, node_name_to_f_agent_heap,
+                    c_agent, self.h_dict, new_map, tubes, corridor_for_c_agents, self.nodes_dict, node_name_to_f_agent_heap,
                     self.to_assert
                 )
                 self.logs['expanded_nodes'] += len(get_tube_info['open_list']) + len(get_tube_info['closed_list'])
@@ -551,7 +552,8 @@ def main():
     N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_LMAPF()
 
     # problem creation
-    env = SimEnvLMAPF(img_dir=img_dir, is_sacg=is_sacg)
+    env = SimEnvLMAPF(img_dir=img_dir, is_sacg=is_sacg, to_check_collisions=True)
+    # env = SimEnvLMAPF(img_dir=img_dir, is_sacg=is_sacg, to_check_collisions=False)
     start_nodes = random.sample(env.nodes, N)
     plot_rate = 0.5
 
