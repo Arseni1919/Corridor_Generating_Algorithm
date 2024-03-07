@@ -29,25 +29,25 @@ def main():
     # ---------------------------------------------------- #
     # n_agents_list = [50, 100, 150, 200, 250, 300, 350, 400]
     # n_agents_list = [500, 600, 700, 800, 900, 1000]  # empty
-    # n_agents_list = [300, 400, 500, 600, 700, 800]  # rand
-    n_agents_list = [200, 300, 400, 500, 600, 700]  # maze
+    n_agents_list = [300, 400, 500, 600, 700, 800]  # rand
+    # n_agents_list = [200, 300, 400, 500, 600, 700]  # maze
     # n_agents_list = [100, 200, 300, 400, 500, 600]  # room
     # n_agents_list = [100, 200]
     # n_agents_list = [700]
     # ---------------------------------------------------- #
-    runs_per_n_agents = 2
+    # runs_per_n_agents = 2
     # runs_per_n_agents = 5
     # runs_per_n_agents = 15
-    # runs_per_n_agents = 25
+    runs_per_n_agents = 25
     # ---------------------------------------------------- #
-    # algorithms = [ALgPrPSACG, AlgPIBT, ALgCGA]
-    algorithms = [AlgPIBT, ALgCGA]
+    algorithms = [ALgPrPSACG, AlgPIBT, ALgCGA]
+    # algorithms = [AlgPIBT, ALgCGA]
     # ---------------------------------------------------- #
     time_to_think_limit = 5
     # ---------------------------------------------------- #
     # img_dir = 'empty-32-32.map'
-    # img_dir = 'random-32-32-20.map'
-    img_dir = 'maze-32-32-4.map'
+    img_dir = 'random-32-32-20.map'
+    # img_dir = 'maze-32-32-4.map'
     # img_dir = 'room-32-32-4.map'
 
     # img_dir = '10_10_my_rand.map'
@@ -119,6 +119,7 @@ def main():
                 if solved:
                     logs_dict[alg.name][f'{n_agents}']['runtime'].append(alg.logs['runtime'])
                     logs_dict[alg.name][f'{n_agents}']['expanded_nodes'].append(alg.logs['expanded_nodes'])
+                    # logs_dict[alg.name][f'{n_agents}']['sq'].append(len(env.agents_dict['agent_0'].path))
                     logs_dict[alg.name][f'{n_agents}']['sq'].append(sum([len(a.unique_moves) for a in env.agents]))
 
                 print(f'\n=============================================')
