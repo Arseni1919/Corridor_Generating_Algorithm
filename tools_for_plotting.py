@@ -421,12 +421,13 @@ def plot_sr(ax, info):
         ax.plot(x_list, sr_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
                 alpha=0.5, label=f'{i_alg}', linewidth=5, markersize=20)
     ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
+    ax.set_ylim([0, 1 + 0.1])
     ax.set_xticks(n_agents_list)
     ax.set_xlabel('N agents', fontsize=15)
     ax.set_ylabel('Success Rate', fontsize=15)
     # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
-    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
-                   size=11)
+    # set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.', size=11)
+    set_plot_title(ax, f'{img_dir[:-4]} Map', size=11)
     set_legend(ax, size=17)
     plt.tight_layout()
 
@@ -539,9 +540,10 @@ def plot_time_metric_cactus(ax, info):
     ax.set_xlabel('Solved Instances', fontsize=15)
     ax.set_ylabel('Runtime', fontsize=15)
     # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
-    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
-                   size=11)
+    # set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.', size=11)
+    set_plot_title(ax, f'{img_dir[:-4]} Map', size=11)
     set_legend(ax, size=17)
+    plt.tight_layout()
 
 
 def plot_en_metric_cactus(ax, info):
@@ -568,8 +570,8 @@ def plot_en_metric_cactus(ax, info):
     ax.set_xlabel('Solved Instances', fontsize=15)
     ax.set_ylabel('Expanded Nodes', fontsize=15)
     # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
-    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
-                   size=11)
+    # set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.', size=11)
+    set_plot_title(ax, f'{img_dir[:-4]} Map', size=11)
     set_legend(ax, size=17)
     plt.tight_layout()
 
@@ -596,11 +598,12 @@ def plot_sq_metric_cactus(ax, info):
     # ax.set_xlim([min(x_list) - 20, max(x_list) + 20])
     # ax.set_xticks(x_list)
     ax.set_xlabel('Solved Instances', fontsize=15)
-    ax.set_ylabel('Solution Quality', fontsize=15)
+    ax.set_ylabel('SoC', fontsize=15)
     # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
-    set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
-                   size=11)
+    # set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.', size=11)
+    set_plot_title(ax, f'{img_dir[:-4]} Map', size=11)
     set_legend(ax, size=17)
+    plt.tight_layout()
 
 
 def plot_makespan(ax, info):
@@ -637,6 +640,7 @@ def plot_throughput(ax, info):
         y_list = []
         for n_a in n_agents_list:
             y_list.append(np.mean(info[i_alg][f'{n_a}']['throughput']))
+        print(f'{i_alg} -> {y_list}')
         ax.plot(n_agents_list, y_list, markers_lines_dict[i_alg], color=colors_dict[i_alg],
                 alpha=0.5, label=f'{i_alg}', linewidth=3, markersize=13)
     ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])

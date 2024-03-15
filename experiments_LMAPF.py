@@ -19,7 +19,7 @@ def run_the_problem(env: SimEnvLMAPF, obs: dict, alg: Any, max_time: int) -> Non
             break
 
 
-@use_profiler(save_dir='stats/experiments_SACG.pstat')
+@use_profiler(save_dir='stats/experiments_LMAPF.pstat')
 def main():
     # ---------------------------------------------------- #
     set_seed(random_seed_bool=False, seed=9922)
@@ -34,14 +34,23 @@ def main():
     # n_agents_list = [100, 200, 300, 400, 500, 600]  # room
     # n_agents_list = [100, 200, 300, 400, 500, 600]  # maze 32-32-2
     # n_agents_list = [100, 200]
-    n_agents_list = [20, 40, 60, 80, 100]
+
+    # n_agents_list = [50, 75, 100]  # 15-15-four-rooms
+    # n_agents_list = [50, 75, 100, 125, 150]  # 15-15-eight-rooms
+    # n_agents_list = [50, 75, 100, 125, 150, 175]  # 15-15-six-rooms ~
+    n_agents_list = [50, 75, 100, 125, 150, 175, 200]  # 15-15-two-rooms ~
+    # n_agents_list = [175]
     # ---------------------------------------------------- #
     # img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-20.map'
     # img_dir = 'maze-32-32-4.map'
     # img_dir = 'room-32-32-4.map'
 
-    img_dir = '15-15-four-rooms.map'
+    # img_dir = '15-15-four-rooms.map'  # 100
+    # img_dir = '15-15-eight-rooms.map'  # 150
+    # img_dir = '15-15-six-rooms.map'   # 175
+    img_dir = '15-15-two-rooms.map'   # 200
+
     # img_dir = '10_10_my_rand.map'
     # img_dir = 'random-32-32-10.map'
     # img_dir = 'maze-32-32-2.map'
@@ -49,32 +58,34 @@ def main():
     # ---------------------------------------------------- #
     # max_time = 20
     # max_time = 50
-    # max_time = 100
-    max_time = 200
+    max_time = 100
+    # max_time = 200
     # ---------------------------------------------------- #
     k = 5
     # ---------------------------------------------------- #
     # runs_per_n_agents = 2
-    runs_per_n_agents = 5
+    # runs_per_n_agents = 5
     # runs_per_n_agents = 15
     # runs_per_n_agents = 15
-    # runs_per_n_agents = 25
+    runs_per_n_agents = 25
     # ---------------------------------------------------- #
     # algorithms = [ALgCGA, AlgLNS2, AlgPrP]
     # algorithms = [ALgCGA]
     # algorithms = [ALgCGA, AlgCGAcor1]
-    algorithms = [AlgPIBT, ALgCGA]
+    # algorithms = [AlgPrP, AlgPIBT, ALgCGA]
+    # algorithms = [AlgPIBT, ALgCGA]
+    algorithms = [AlgPrP]
     # ---------------------------------------------------- #
     time_to_think_limit = 5
     # ---------------------------------------------------- #
-    # to_save_results = True
-    to_save_results = False
+    to_save_results = True
+    # to_save_results = False
     # ---------------------------------------------------- #
     to_check_collisions = False
     # to_check_collisions = True
     # ---------------------------------------------------- #
-    middle_plot = True
-    # middle_plot = False
+    # middle_plot = True
+    middle_plot = False
     # ---------------------------------------------------- #
     if middle_plot:
         fig, ax = plt.subplots(1, 2, figsize=(10, 5))

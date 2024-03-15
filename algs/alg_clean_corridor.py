@@ -241,30 +241,30 @@ def get_tube(
     :param to_assert:
     :return: solvable, Tube(nodes, free_node)
     """
-    captured_free_nodes_heap: List[Node] = [tube.free_node.xy_name for tube in tubes]
+    captured_free_nodes_heap: List[Tuple[int, int]] = [(tube.free_node.x, tube.free_node.y) for tube in tubes]
     heapq.heapify(captured_free_nodes_heap)
 
-    if to_assert:
-        for cap_node in captured_free_nodes_heap:
-            assert cap_node not in node_name_to_f_agent_heap
+    # if to_assert:
+    #     for cap_node in captured_free_nodes_heap:
+    #         assert cap_node not in node_name_to_f_agent_heap
 
     spanning_tree_dict: Dict[str, str | None] = {c_agent.curr_node.xy_name: None}
     open_list: Deque[Node] = deque([c_agent.curr_node])
-    open_list_heap: List[str] = [c_agent.curr_node.xy_name]
+    open_list_heap: List[Tuple[int, int]] = [(c_agent.curr_node.x, c_agent.curr_node.y)]
     heapq.heapify(open_list_heap)
     curr_h_dict = h_dict[c_agent.curr_node.xy_name]
     # open_list_heap: List[Tuple[int, Node]] = [(int(curr_h_dict[c_agent.curr_node.x, c_agent.curr_node.y]), c_agent.curr_node)]
     # heapq.heapify(open_list_heap)
-    closed_list_heap: List[str] = []
+    closed_list_heap: List[Tuple[int, int]] = []
     heapq.heapify(closed_list_heap)
     small_iteration: int = 0
     while len(open_list) > 0:
         small_iteration += 1
 
         selected_node = open_list.popleft()
-        open_list_heap.remove(selected_node.xy_name)
+        open_list_heap.remove((selected_node.x, selected_node.y))
         # h_v, selected_node = open_list_heap.pop()
-        if selected_node not in corridor_for_c_agents and selected_node.xy_name not in node_name_to_f_agent_heap and selected_node.xy_name not in captured_free_nodes_heap:
+        if (selected_node.x, selected_node.y) not in captured_free_nodes_heap and selected_node.xy_name not in node_name_to_f_agent_heap and selected_node not in corridor_for_c_agents:
             nodes, tube_pattern = get_full_tube(selected_node, spanning_tree_dict, nodes_dict, node_name_to_f_agent_heap)
             tube = Tube(nodes, selected_node, tube_pattern)
             return True, tube, {'closed_list': closed_list_heap, 'open_list': open_list}
@@ -280,9 +280,9 @@ def get_tube(
             # 1 - free space, 0 - occupied space
             if new_map[nei_node.x, nei_node.y] == 0:
                 continue
-            if nei_node.xy_name in closed_list_heap:
+            if (nei_node.x, nei_node.y) in closed_list_heap:
                 continue
-            if nei_node.xy_name in open_list_heap:
+            if (nei_node.x, nei_node.y) in open_list_heap:
                 continue
             # connect nei_note to selected one
             spanning_tree_dict[nei_node.xy_name] = selected_node.xy_name
@@ -292,15 +292,15 @@ def get_tube(
             # else:
             #     outer_nodes.append(nei_node)
         random.shuffle(nei_nodes)
-        heapq.heapify(nei_nodes)
+        # heapq.heapify(nei_nodes)
         # nei_nodes
         for nei_h, nei_node in nei_nodes:
             open_list.append(nei_node)
-            heapq.heappush(open_list_heap, nei_node.xy_name)
+            heapq.heappush(open_list_heap, (nei_node.x, nei_node.y))
         # open_list.extendleft(nei_nodes)
         # open_list.extendleft(outer_nodes)
         # open_list.extendleft(corridor_nodes)
-        heapq.heappush(closed_list_heap, selected_node.xy_name)
+        heapq.heappush(closed_list_heap, (selected_node.x, selected_node.y))
     return False, None, {'closed_list': closed_list_heap, 'open_list': open_list}
 
 

@@ -29,11 +29,21 @@ def main():
     # ---------------------------------------------------- #
     # n_agents_list = [50, 100, 150, 200, 250, 300, 350, 400]
     # n_agents_list = [500, 600, 700, 800, 900, 1000]  # empty
-    n_agents_list = [300, 400, 500, 600, 700, 800]  # rand
+    # n_agents_list = [300, 400, 500, 600, 700, 800]  # rand
     # n_agents_list = [200, 300, 400, 500, 600, 700]  # maze
-    # n_agents_list = [100, 200, 300, 400, 500, 600]  # room
+    n_agents_list = [100, 200, 300, 400, 500, 600]  # room
     # n_agents_list = [100, 200]
-    # n_agents_list = [700]
+    # n_agents_list = [1000]
+    # ---------------------------------------------------- #
+    # img_dir = 'empty-32-32.map'
+    # img_dir = 'random-32-32-20.map'
+    # img_dir = 'maze-32-32-4.map'
+    img_dir = 'room-32-32-4.map'
+
+    # img_dir = '10_10_my_rand.map'
+    # img_dir = 'random-32-32-10.map'
+    # img_dir = 'maze-32-32-2.map'
+    # img_dir = 'random-64-64-20.map'
     # ---------------------------------------------------- #
     # runs_per_n_agents = 2
     # runs_per_n_agents = 5
@@ -42,21 +52,12 @@ def main():
     # ---------------------------------------------------- #
     algorithms = [ALgPrPSACG, AlgPIBT, ALgCGA]
     # algorithms = [AlgPIBT, ALgCGA]
+    # algorithms = [AlgPIBT]
     # ---------------------------------------------------- #
     time_to_think_limit = 5
     # ---------------------------------------------------- #
-    # img_dir = 'empty-32-32.map'
-    img_dir = 'random-32-32-20.map'
-    # img_dir = 'maze-32-32-4.map'
-    # img_dir = 'room-32-32-4.map'
-
-    # img_dir = '10_10_my_rand.map'
-    # img_dir = 'random-32-32-10.map'
-    # img_dir = 'maze-32-32-2.map'
-    # img_dir = 'random-64-64-20.map'
-    # ---------------------------------------------------- #
-    # to_save_results = True
-    to_save_results = False
+    to_save_results = True
+    # to_save_results = False
     # ---------------------------------------------------- #
     to_check_collisions = False
     # to_check_collisions = True
@@ -82,6 +83,7 @@ def main():
     # ---------------------------------------------------- #
     if middle_plot:
         fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+        # fig, ax = plt.subplots(1, 2, figsize=(10, 5))
     # ---------------------------------------------------- #
     path_to_maps = 'maps'
     # ---------------------------------------------------- #
@@ -127,9 +129,9 @@ def main():
                 print(f'=============================================')
                 if middle_plot:
                     plot_sr(ax[0], logs_dict)
-                    # plot_time_metric_cactus(ax[1], logs_dict)
                     plot_sq_metric_cactus(ax[1], logs_dict)
-                    plot_en_metric_cactus(ax[2], logs_dict)
+                    # plot_en_metric_cactus(ax[2], logs_dict)
+                    plot_time_metric_cactus(ax[2], logs_dict)
                     plt.pause(0.001)
 
     if to_save_results:
