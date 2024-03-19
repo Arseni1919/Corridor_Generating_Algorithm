@@ -9,7 +9,7 @@ import numpy as np
 from tools_for_plotting import *
 from tools_for_heuristics import *
 from tools_for_graph_nodes import *
-from environments.env_LMAPF import SimEnvLMAPF
+from environments.env_SACG_LMAPF import SimEnvLMAPF
 from algs.alg_gen_cor_v1 import copy_nodes
 from algs.alg_clean_corridor import *
 from create_animation import do_the_animation

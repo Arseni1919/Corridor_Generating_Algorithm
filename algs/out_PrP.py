@@ -4,7 +4,7 @@ from tools_for_heuristics import *
 from tools_for_plotting import *
 from algs.old_alg_a_star_space_time import a_star_xyt
 from algs.params import *
-from environments.env_LMAPF import SimEnvLMAPF
+from environments.env_SACG_LMAPF import SimEnvLMAPF
 # from create_animation import do_the_animation
 
 

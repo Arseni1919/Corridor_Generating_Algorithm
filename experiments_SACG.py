@@ -7,7 +7,7 @@ from main_show_results import show_results
 from algs.alg_PrP_SACG import ALgPrPSACG
 from algs.alg_CGA import ALgCGA
 from algs.alg_PIBT import AlgPIBT
-from environments.env_LMAPF import SimEnvLMAPF
+from environments.env_SACG_LMAPF import SimEnvLMAPF
 
 
 def run_the_problem(env: SimEnvLMAPF, obs: dict, alg: ALgCGA | ALgPrPSACG) -> bool:
