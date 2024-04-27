@@ -311,7 +311,7 @@ def main():
     # path, info = calc_temporal_a_star(curr_node=node_start, goal_node=node_goal, nodes_dict=nodes_dict,
     #                                   h_dict=h_dict, max_len=1000, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
 
-    path, info = calc_fastest_escape(curr_node=node_start, goal_node=node_start, nodes_dict=nodes_dict,
+    path, info = calc_fastest_escape(curr_node=node_start, goal_node=node_goal, nodes_dict=nodes_dict,
                                      h_dict=h_dict, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
 
     if path:

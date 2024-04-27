@@ -47,6 +47,9 @@ class SimEnvMAPF:
     def start_nodes_names(self):
         return [n.xy_name for n in self.start_nodes]
 
+    def goal_nodes_names(self):
+        return [agent.goal_node.xy_name for agent in self.agents]
+
     @property
     def agents_names(self):
         return [a.name for a in self.agents]
@@ -91,7 +94,6 @@ class SimEnvMAPF:
                    AgentTupleMAPF(**{
                        'num': agent.num,
                        'start_node_name': agent.start_node.xy_name,
-                       'curr_node_name': agent.curr_node.xy_name,
                        'goal_node_name': agent.goal_node.xy_name,
                    })
                for agent in self.agents

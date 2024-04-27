@@ -14,10 +14,10 @@ def plot_just_field(ax, info):
 
 
 def main():
-    # img_dir = '15-15-two-rooms.map'
+    img_dir = '15-15-two-rooms.map'
     # img_dir = '15-15-four-rooms.map'
     # img_dir = '15-15-six-rooms.map'
-    img_dir = '15-15-eight-rooms.map'
+    # img_dir = '15-15-eight-rooms.map'
 
     nodes, nodes_dict, img_np = build_graph_nodes(img_dir=img_dir, path='maps', show_map=False)
     fig, ax = plt.subplots(1, 1, figsize=(5, 5))
