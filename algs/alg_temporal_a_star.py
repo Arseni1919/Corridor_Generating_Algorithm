@@ -200,7 +200,6 @@ def calc_fastest_escape(curr_node: Node, goal_node: Node, nodes_dict: Dict[str, 
     :param goal_node:
     :param nodes_dict:
     :param h_dict:
-    :param max_len:
     :param vc_np: vertex constraints [x, y, t] = bool
     :param ec_np: edge constraints [x, y, x, y, t] = bool
     :param pc_np: permanent constraints [x, y] = int
