@@ -51,7 +51,7 @@ def main():
     runs_per_n_agents = 25
     # ---------------------------------------------------- #
     algorithms = [ALgPrPSACG, AlgPIBT, ALgCGA]
-    # algorithms = [AlgPIBT, ALgCGA]
+    # algorithms = [AlgPIBT, ALgCBS]
     # algorithms = [AlgPIBT]
     # ---------------------------------------------------- #
     time_to_think_limit = 5

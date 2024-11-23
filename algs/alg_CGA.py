@@ -504,7 +504,7 @@ class ALgCGA:
         #     assert new_map[n.x, n.y]
         #
         # # check if there are any agents inside the corridor
-        # c_agents: List[AlgCGAAgent] = get_agents_in_corridor(corridor, node_name_to_f_agent_dict,
+        # c_agents: List[AlgCBSAgent] = get_agents_in_corridor(corridor, node_name_to_f_agent_dict,
         #                                                        node_name_to_f_agent_heap)
         #
         # # if there are no agents inside the corridor, then update agent's path and return True with []
@@ -547,9 +547,9 @@ class ALgCGA:
 @use_profiler(save_dir='../stats/alg_CGA.pstat')
 def main():
     # SACG
-    # N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_SACG()
+    N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_SACG()
     # LMAPF
-    N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_LMAPF()
+    # N, img_dir, max_time, corridor_size, to_render, to_check_paths, is_sacg, to_save = params_for_LMAPF()
 
     # problem creation
     env = SimEnvLMAPF(img_dir=img_dir, is_sacg=is_sacg, to_check_collisions=True)

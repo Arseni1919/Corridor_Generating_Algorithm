@@ -60,8 +60,9 @@ def get_latest_vc_on_node(i_node: Node, vc_np: np.ndarray | None) -> int:
     return indices[-1][0]
 
 
-def create_constraints(paths: List[List[Node]], map_dim: Tuple[int, int]) -> Tuple[
-    np.ndarray | None, np.ndarray | None, np.ndarray | None]:
+def create_constraints(
+        paths: List[List[Node]], map_dim: Tuple[int, int]
+) -> Tuple[np.ndarray | None, np.ndarray | None, np.ndarray | None]:
     """
     vc_np: vertex constraints [x, y, t] = bool
     ec_np: edge constraints [x, y, x, y, t] = bool
@@ -307,11 +308,11 @@ def main():
     paths = [path]
     vc_np, ec_np, pc_np = create_constraints(paths, map_dim)
 
-    # path, info = calc_temporal_a_star(curr_node=node_start, goal_node=node_goal, nodes_dict=nodes_dict,
-    #                                   h_dict=h_dict, max_len=1000, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
+    path, info = calc_temporal_a_star(curr_node=node_start, goal_node=node_goal, nodes_dict=nodes_dict,
+                                      h_dict=h_dict, max_len=1000, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
 
-    path, info = calc_fastest_escape(curr_node=node_start, goal_node=node_goal, nodes_dict=nodes_dict,
-                                     h_dict=h_dict, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
+    # path, info = calc_fastest_escape(curr_node=node_start, goal_node=node_goal, nodes_dict=nodes_dict,
+    #                                  h_dict=h_dict, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np)
 
     if path:
         print(f'\nruntime: {info['runtime']: .2f}s.')

@@ -69,11 +69,11 @@ def main():
     # runs_per_n_agents = 15
     runs_per_n_agents = 25
     # ---------------------------------------------------- #
-    # algorithms = [ALgCGA, AlgLNS2, AlgPrP]
-    # algorithms = [ALgCGA]
-    # algorithms = [ALgCGA, AlgCGAcor1]
-    # algorithms = [AlgPrP, AlgPIBT, ALgCGA]
-    # algorithms = [AlgPIBT, ALgCGA]
+    # algorithms = [ALgCBS, AlgLNS2, AlgPrP]
+    # algorithms = [ALgCBS]
+    # algorithms = [ALgCBS, AlgCGAcor1]
+    # algorithms = [AlgPrP, AlgPIBT, ALgCBS]
+    # algorithms = [AlgPIBT, ALgCBS]
     algorithms = [AlgPrP]
     # ---------------------------------------------------- #
     time_to_think_limit = 5

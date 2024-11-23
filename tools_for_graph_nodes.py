@@ -7,25 +7,18 @@ from functions import *
 
 class Node:
     def __init__(self, x: int, y: int, t: int = 0, neighbours: List[str] | None = None):
-        self._x = x
-        self._y = y
+        self.x = x
+        self.y = y
         self.t = t
         self.h = 0
         self.neighbours = [] if neighbours is None else neighbours
         self.parent = None
         self.g_dict = {}
-
-    @property
-    def x(self):
-        return self._x
-
-    @property
-    def y(self):
-        return self._y
+        self.xy_name = f'{self.x}_{self.y}'
 
     @property
     def xy(self):
-        return self._x, self._y
+        return self.x, self.y
 
     @property
     def g(self):
@@ -34,10 +27,6 @@ class Node:
     @property
     def xyt_name(self):
         return f'{self.x}_{self.y}_{self.t}'
-
-    @property
-    def xy_name(self):
-        return f'{self.x}_{self.y}'
 
     @property
     def f(self):
@@ -52,6 +41,12 @@ class Node:
 
     def __gt__(self, other):
         return self.xy_name > other.xy_name
+
+    def __str__(self):
+        return self.xy_name
+
+    def __repr__(self):
+        return self.xy_name
 
     def reset(self, target_nodes: list | None = None, **kwargs):
         if 'start_time' in kwargs:
