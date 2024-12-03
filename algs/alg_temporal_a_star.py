@@ -123,9 +123,17 @@ def get_node_successor(i_node: Node, successor_xy_name: str, new_t: int, nodes_d
     return node_successor
 
 
-def calc_temporal_a_star(curr_node: Node, goal_node: Node, nodes_dict: Dict[str, Node], h_dict, max_len: int,
-                         vc_np: np.ndarray | None = None, ec_np: np.ndarray | None = None, pc_np: np.ndarray | None = None) -> Tuple[List[
-    Node], dict] | None:
+def calc_temporal_a_star(
+        curr_node: Node,
+        goal_node: Node,
+        nodes_dict: Dict[str, Node],
+        h_dict: dict,
+        max_len: int,
+        vc_np: np.ndarray | None = None,
+        ec_np: np.ndarray | None = None,
+        pc_np: np.ndarray | None = None,
+        any_goal_bool: bool = False,
+) -> Tuple[List[Node], dict] | None:
     """
     :param curr_node:
     :param goal_node:
@@ -154,7 +162,7 @@ def calc_temporal_a_star(curr_node: Node, goal_node: Node, nodes_dict: Dict[str,
         print(f'\ropen: {len(open_list)}, closed: {len(closed_list)}', end='')
         i_t, i_h, i_f, i_node = open_list.pop()
         # i_node_name = i_node.xy_name
-        if i_node == goal_node or i_t >= max_len:
+        if i_node == goal_node or i_t >= max_len or any_goal_bool:
             # if there is a future constraint on a goal
             latest_vc_on_node: int = get_latest_vc_on_node(i_node, vc_np)
             if i_t > latest_vc_on_node or i_t >= max_len:

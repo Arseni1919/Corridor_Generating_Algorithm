@@ -5,13 +5,13 @@ def params_for_SACG():
     set_seed(random_seed_bool=False, seed=9922)
     # set_seed(random_seed_bool=False, seed=123)
     # set_seed(random_seed_bool=True)
-    # N = 50
+    N = 50
     # N = 100
     # N = 150
     # N = 200
     # N = 250
     # N = 300
-    N = 400
+    # N = 400
     # N = 450
     # N = 500
     # N = 600

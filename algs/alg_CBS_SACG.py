@@ -1,5 +1,6 @@
 import heapq
 import random
+from itertools import combinations
 
 import matplotlib.pyplot as plt
 from collections import deque
@@ -42,23 +43,32 @@ class AlgCBSAgent:
 
 
 class CBSNode:
-    def __init__(self, agents: List[AlgCBSAgent], nodes, nodes_dict, h_dict, parent=None):
+    def __init__(self, cbs_i: int, agents: List[AlgCBSAgent], nodes, nodes_dict, h_dict, map_dim, parent=None):
+        self.cbs_i = cbs_i
         self.agents = agents
         self.nodes = nodes
         self.nodes_dict = nodes_dict
         self.h_dict = h_dict
-        self.vertex_conf_list: List[Tuple[int, int, int]] = []
-        self.edge_conf_list: List[Tuple[int, int, int, int, int]] = []
-        self.solution = {}
+        self.map_dim = map_dim
+        self.vertex_conf_dict: Dict[str, List[Tuple[Node, int]]]= {a.name: [] for a in self.agents}
+        self.edge_conf_dict: Dict[str, List[Tuple[Node, Node, int]]] = {a.name: [] for a in self.agents}
+        self.solution: Dict[str, List[Node]] = {a.name: [] for a in self.agents}
         self.cost = 1e10
         self.parent = parent
         if self.parent is not None:
-            self.vertex_conf_list = self.parent.vertex_conf_list[:]
-            self.edge_conf_list = self.parent.edge_conf_list[:]
-            self.solution = self.parent.solution.copy()
+            for agent in self.agents:
+                self.vertex_conf_dict[agent.name] = self.parent.vertex_conf_dict[agent.name][:]
+                self.edge_conf_dict[agent.name] = self.parent.edge_conf_dict[agent.name][:]
+                self.solution[agent.name] = self.parent.solution[agent.name][:]
 
     def __lt__(self, other):
         return self.cost < other.cost
+
+    def __str__(self):
+        return f'CBSNode([{self.cbs_i}]-{self.cost})'
+
+    def __repr__(self):
+        return f'CBSNode([{self.cbs_i}]-{self.cost})'
 
     def create_init_solution(self):
         for agent in self.agents:
@@ -67,12 +77,39 @@ class CBSNode:
                 h_dict=self.h_dict, max_len=1000
             )
             self.solution[agent.name] = path
-        self.cost = len(self.solution['agent_0'].path)
+        self.cost = len(self.solution['agent_0'])
 
+    def add_constraint(
+            self, conf_agent: AlgCBSAgent, first_conf: Tuple[Node, int] | Tuple[Node, Node, int], conf_type: str
+    ) -> None:
+        if conf_type == 'vertex':
+            n, i = first_conf
+            self.vertex_conf_dict[conf_agent.name].append((n, i))
+        elif conf_type == 'edge':
+            from_n, to_n, i = first_conf
+            self.edge_conf_dict[conf_agent.name].append((from_n, to_n, i))
+            self.edge_conf_dict[conf_agent.name].append((to_n, from_n, i))
+        else:
+            raise RuntimeError('no way')
 
-def validate_cbs_node(cbs_node: CBSNode) -> Tuple[bool, tuple, str, List[AlgCBSAgent]]:
-    # returns: no_conf_bool, first_conf, conf_type, conf_agents
-    pass
+    def update_plan(self, conf_agent: AlgCBSAgent) -> bool:
+        """
+        Update solution and cost
+        """
+        conf_vertex_list = self.vertex_conf_dict[conf_agent.name]
+        conf_edge_list = self.edge_conf_dict[conf_agent.name]
+        max_conf_time = len(self.solution['agent_0'])
+        vc_np, ec_np, pc_np = get_np_constraints(self.map_dim, max_conf_time, conf_vertex_list, conf_edge_list)
+        any_goal_bool = conf_agent.name != 'agent_0'  # false for agent_0 and true for others
+        path, info = calc_temporal_a_star(
+            curr_node=conf_agent.start_node, goal_node=conf_agent.next_goal_node, nodes_dict=self.nodes_dict,
+            h_dict=self.h_dict, max_len=1000, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np, any_goal_bool=any_goal_bool
+        )
+        if path is not None:
+            self.solution[conf_agent.name] = path
+            self.cost = len(self.solution['agent_0'])
+            return True
+        return False
 
 
 class ALgCBS:
@@ -96,6 +133,7 @@ class ALgCBS:
 
         self.agents: List[AlgCBSAgent] = []
         self.agents_dict: Dict[str, AlgCBSAgent] = {}
+        self.main_agent: AlgCBSAgent | None = None
         self.start_nodes: List[Node] = []
 
         self.max_time: int | None = self.env.max_time
@@ -121,7 +159,7 @@ class ALgCBS:
         self._update_agents(obs)
         actions = {}
         for agent in self.agents:
-            if len(agent.path) < self.next_iteration:
+            if self.next_iteration < len(agent.path):
                 actions[agent.name] = agent.path[self.next_iteration].xy_name
             else:
                 actions[agent.name] = agent.path[-1].xy_name
@@ -141,6 +179,8 @@ class ALgCBS:
             new_agent = AlgCBSAgent(num=num, start_node=start_node, next_goal_node=next_goal_node)
             self.agents.append(new_agent)
             self.agents_dict[new_agent.name] = new_agent
+        self.main_agent = self.agents[0]
+        assert self.main_agent.name == 'agent_0'
 
     def _update_agents(self, obs: dict) -> None:
         for agent in self.agents:
@@ -155,7 +195,10 @@ class ALgCBS:
 
     def _solve(self):
         # solve with CBS
-        root = CBSNode(agents=self.agents, nodes=self.nodes, nodes_dict=self.nodes_dict, h_dict=self.h_dict)
+        cbs_i = 0
+        root = CBSNode(
+            cbs_i=cbs_i, agents=self.agents, nodes=self.nodes, nodes_dict=self.nodes_dict, h_dict=self.h_dict, map_dim=self.map_dim
+        )
         root.create_init_solution()
         open_list = [root]
         while len(open_list) > 0:
@@ -166,20 +209,63 @@ class ALgCBS:
                     agent.path = next_cbs_node.solution[agent.name]
                     return True
             for conf_agent in conf_agents:
+                cbs_i += 1
                 new_cbs_node = CBSNode(
-                    agents=self.agents, nodes=self.nodes, nodes_dict=self.nodes_dict,
-                    h_dict=self.h_dict, parent=next_cbs_node
+                    cbs_i=cbs_i, agents=self.agents, nodes=self.nodes, nodes_dict=self.nodes_dict,
+                    h_dict=self.h_dict, map_dim=self.map_dim, parent=next_cbs_node
                 )
                 new_cbs_node.add_constraint(conf_agent, first_conf, conf_type)
-                succeeded = new_cbs_node.udpate_plan(conf_agent)
+                succeeded = new_cbs_node.update_plan(conf_agent)
                 if succeeded:
                     heapq.heappush(open_list, new_cbs_node)
         return False
 
-        # for agent in self.agents:
-        #     for _ in range(self.max_time):
-        #         agent.path.append(agent.curr_node)
 
+def validate_cbs_node(
+        cbs_node: CBSNode
+) -> Tuple[bool, Tuple[Node, int] | Tuple[Node, Node, int] | tuple, str, List[AlgCBSAgent]]:
+    # returns: no_conf_bool, first_conf, conf_type, conf_agents
+    if cbs_node.cbs_i == 18:
+        print('', end='')
+    for a1, a2 in combinations(cbs_node.agents, 2):
+        a1_path = cbs_node.solution[a1.name]
+        a2_path = cbs_node.solution[a2.name]
+        max_iter = max(len(a1_path), len(a2_path))
+        for i in range(max_iter):
+            a1_iter = min(i, len(cbs_node.solution[a1.name]) - 1)
+            a2_iter = min(i, len(cbs_node.solution[a2.name]) - 1)
+            a1_prev_iter = max(0, a1_iter - 1)
+            a2_prev_iter = max(0, a2_iter - 1)
+            curr_node_1 = cbs_node.solution[a1.name][a1_iter]
+            curr_node_2 = cbs_node.solution[a2.name][a2_iter]
+            prev_node_1 = cbs_node.solution[a1.name][a1_prev_iter]
+            prev_node_2 = cbs_node.solution[a2.name][a2_prev_iter]
+            # vertex conf
+            if curr_node_1 == curr_node_2:
+                conf_vertex = (curr_node_1, i)
+                return False, conf_vertex, 'vertex', [a1, a2]  # vertex conflict
+            # edge conf
+            edge1 = (prev_node_1.x, prev_node_1.y, curr_node_1.x, curr_node_1.y)
+            edge2 = (curr_node_2.x, curr_node_2.y, prev_node_2.x, prev_node_2.y)
+            if edge1 == edge2:
+                conf_edge = (cbs_node.solution[a1.name][i], cbs_node.solution[a1.name][i + 1], i)
+                # edge_conf_dict: Dict[str, List[Tuple[str, str, int]]] = {}
+                return False, conf_edge, 'edge', [a1, a2]  # edge conflict
+    return True, (), '', []  # no conflict
+
+
+def get_np_constraints(
+        map_dim: tuple[int, int], max_conf_time: int,
+        conf_vertex_list: List[Tuple[Node, int]], conf_edge_list: List[Tuple[Node, Node, int]]
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    vc_np = np.zeros((map_dim[0], map_dim[1], max_conf_time))
+    ec_np = np.zeros((map_dim[0], map_dim[1], map_dim[0], map_dim[1], max_conf_time))
+    pc_np = np.ones((map_dim[0], map_dim[1])) * -1
+    for conf_v in conf_vertex_list:
+        vc_np[conf_v[0].x, conf_v[0].y, conf_v[1]] = 1
+    for conf_e in conf_edge_list:
+        ec_np[conf_e[0].x, conf_e[0].y, conf_e[1].x, conf_e[1].y, conf_e[2]] = 1
+    return vc_np, ec_np, pc_np
 
 
 @use_profiler(save_dir='../stats/alg_CBS_SACG.pstat')
@@ -247,3 +333,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# for agent in self.agents:
+#     for _ in range(self.max_time):
+#         agent.path.append(agent.curr_node)

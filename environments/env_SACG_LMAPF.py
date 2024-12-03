@@ -22,10 +22,13 @@ class SimAgentLMAPF:
         self.max_waiting_to_the_goal = 0
         # self.waiting_times = []
         self.stuck_count = 0
+        self.name: str = f'agent_{self.num}'
 
-    @property
-    def name(self):
-        return f'agent_{self.num}'
+    def __str__(self):
+        return f'{self.name}: prev: {self.prev_node}, curr: {self.curr_node}'
+
+    def __repr__(self):
+        return f'{self.name}: prev: {self.prev_node}, curr: {self.curr_node}'
 
 
 class SimEnvLMAPF:
@@ -107,6 +110,7 @@ class SimEnvLMAPF:
 
     def step(self, actions: Dict[str, str]) -> Tuple[Dict[str, Any], dict, bool, dict]:
         assert not self._if_terminated
+        iteration = self.iteration
         self._execute_actions(actions)
         self._update_goals()
         self.iteration += 1
