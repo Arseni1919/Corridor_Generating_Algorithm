@@ -43,9 +43,10 @@ class AlgCBSAgent:
 
 
 class CBSNode:
-    def __init__(self, cbs_i: int, agents: List[AlgCBSAgent], nodes, nodes_dict, h_dict, map_dim, parent=None):
+    def __init__(self, cbs_i: int, agents: List[AlgCBSAgent], main_agent: AlgCBSAgent, nodes, nodes_dict, h_dict, map_dim, parent=None):
         self.cbs_i = cbs_i
         self.agents = agents
+        self.main_agent = main_agent
         self.nodes = nodes
         self.nodes_dict = nodes_dict
         self.h_dict = h_dict
@@ -106,7 +107,9 @@ class CBSNode:
             h_dict=self.h_dict, max_len=1000, vc_np=vc_np, ec_np=ec_np, pc_np=pc_np, any_goal_bool=any_goal_bool
         )
         if path is not None:
-            self.solution[conf_agent.name] = path
+            max_path_len = max(len(path), len(self.solution[self.main_agent.name]))
+            self.solution[conf_agent.name] = extend_path(max_path_len, path)
+            # self.solution[conf_agent.name] = path
             self.cost = len(self.solution['agent_0'])
             return True
         return False
@@ -193,11 +196,17 @@ class ALgCBS:
             agent.arrived = obs_agent.arrived
             agent.goals_per_iter_list.append(agent.next_goal_node)
 
+    def _upload_paths(self, cbs_node: CBSNode):
+        max_path_len = len(cbs_node.solution[self.main_agent.name])
+        for agent in self.agents:
+            agent.path = cbs_node.solution[agent.name]
+            agent.path = extend_path(max_path_len, agent.path)
+
     def _solve(self):
         # solve with CBS
         cbs_i = 0
         root = CBSNode(
-            cbs_i=cbs_i, agents=self.agents, nodes=self.nodes, nodes_dict=self.nodes_dict, h_dict=self.h_dict, map_dim=self.map_dim
+            cbs_i=cbs_i, agents=self.agents, main_agent=self.main_agent, nodes=self.nodes, nodes_dict=self.nodes_dict, h_dict=self.h_dict, map_dim=self.map_dim
         )
         root.create_init_solution()
         open_list = [root]
@@ -205,13 +214,12 @@ class ALgCBS:
             next_cbs_node = heapq.heappop(open_list)
             no_conf_bool, first_conf, conf_type, conf_agents = validate_cbs_node(next_cbs_node)
             if no_conf_bool:
-                for agent in self.agents:
-                    agent.path = next_cbs_node.solution[agent.name]
-                    return True
+                self._upload_paths(next_cbs_node)
+                return True
             for conf_agent in conf_agents:
                 cbs_i += 1
                 new_cbs_node = CBSNode(
-                    cbs_i=cbs_i, agents=self.agents, nodes=self.nodes, nodes_dict=self.nodes_dict,
+                    cbs_i=cbs_i, agents=self.agents, main_agent=self.main_agent, nodes=self.nodes, nodes_dict=self.nodes_dict,
                     h_dict=self.h_dict, map_dim=self.map_dim, parent=next_cbs_node
                 )
                 new_cbs_node.add_constraint(conf_agent, first_conf, conf_type)
@@ -225,9 +233,9 @@ def validate_cbs_node(
         cbs_node: CBSNode
 ) -> Tuple[bool, Tuple[Node, int] | Tuple[Node, Node, int] | tuple, str, List[AlgCBSAgent]]:
     # returns: no_conf_bool, first_conf, conf_type, conf_agents
-    if cbs_node.cbs_i == 18:
-        print('', end='')
     for a1, a2 in combinations(cbs_node.agents, 2):
+        if cbs_node.cbs_i == 18 and a1.num == 0 and a2.num == 29:
+            print('', end='')
         a1_path = cbs_node.solution[a1.name]
         a2_path = cbs_node.solution[a2.name]
         max_iter = max(len(a1_path), len(a2_path))

@@ -345,3 +345,8 @@ def euclidean_distance_nodes(node1, node2):
 def manhattan_distance_nodes(node1, node2):
     return abs(node1.x-node2.x) + abs(node1.y-node2.y)
 
+
+def extend_path(up_to: int, path: List):
+    while len(path) < up_to:
+        path.append(path[-1])
+    return path

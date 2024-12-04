@@ -135,15 +135,10 @@ def calc_temporal_a_star(
         any_goal_bool: bool = False,
 ) -> Tuple[List[Node], dict] | None:
     """
-    :param curr_node:
-    :param goal_node:
-    :param nodes_dict:
-    :param h_dict:
-    :param max_len:
-    :param vc_np: vertex constraints [x, y, t] = bool
-    :param ec_np: edge constraints [x, y, x, y, t] = bool
-    :param pc_np: permanent constraints [x, y] = int
-    :return: List of nodes where the first item is the agent's current location
+    vc_np: vertex constraints [x, y, t] = 0 / 1
+    ec_np: edge constraints [x, y, x, y, t] = 0 / 1
+    pc_np: permanent constraints [x, y] = int
+    return: List of nodes where the first item is the agent's current location
     """
     start_time = time.time()
     goal_h_dict: np.ndarray = h_dict[goal_node.xy_name]
@@ -162,7 +157,11 @@ def calc_temporal_a_star(
         print(f'\ropen: {len(open_list)}, closed: {len(closed_list)}', end='')
         i_t, i_h, i_f, i_node = open_list.pop()
         # i_node_name = i_node.xy_name
-        if i_node == goal_node or i_t >= max_len or any_goal_bool:
+        if any_goal_bool:
+            finished_bool = True
+        else:
+            finished_bool = i_node == goal_node
+        if finished_bool or i_t >= max_len:
             # if there is a future constraint on a goal
             latest_vc_on_node: int = get_latest_vc_on_node(i_node, vc_np)
             if i_t > latest_vc_on_node or i_t >= max_len:

@@ -5,11 +5,12 @@ def params_for_SACG():
     set_seed(random_seed_bool=False, seed=9922)
     # set_seed(random_seed_bool=False, seed=123)
     # set_seed(random_seed_bool=True)
-    N = 50
+    # N = 40
+    # N = 50
     # N = 100
     # N = 150
     # N = 200
-    # N = 250
+    N = 250
     # N = 300
     # N = 400
     # N = 450
@@ -24,12 +25,12 @@ def params_for_SACG():
     # N = 1000
     # img_dir = 'empty-32-32.map'
     # img_dir = 'random-32-32-20.map'
-    img_dir = 'maze-32-32-4.map'
+    # img_dir = 'maze-32-32-4.map'
     # img_dir = 'room-32-32-4.map'
 
     # img_dir = '10_10_my_rand.map'
     # img_dir = 'random-32-32-10.map'
-    # img_dir = 'maze-32-32-2.map'
+    img_dir = 'maze-32-32-2.map'
     # img_dir = 'random-64-64-20.map'
     # max_time = 20
     # max_time = 100
@@ -42,8 +43,8 @@ def params_for_SACG():
     # corridor_size = 2
     corridor_size = 1
 
-    # to_render: bool = True
-    to_render: bool = False
+    to_render: bool = True
+    # to_render: bool = False
 
     # is_sacg: bool = False
     is_sacg: bool = True
