@@ -117,7 +117,7 @@ class CBSNode:
 
 class ALgCBS:
 
-    name = 'CBS-SACG'
+    name = 'CBS_SACG'
 
     def __init__(self, env: SimEnvLMAPF, to_check_paths: bool = False, to_assert: bool = False, **kwargs):
 
@@ -154,6 +154,8 @@ class ALgCBS:
             'expanded_nodes': 0,
         }
         solved = self._solve()
+        if solved:
+            self.logs['soc'] = len(self.main_agent.path)
         return solved
 
     def get_actions(self, obs: dict) -> Dict[str, str]:

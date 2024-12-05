@@ -447,7 +447,7 @@ def plot_soc(ax, info):
     ax.set_xlim([min(n_agents_list) - 20, max(n_agents_list) + 20])
     ax.set_xticks(n_agents_list)
     ax.set_xlabel('N agents')
-    ax.set_ylabel('Average SoC')
+    ax.set_ylabel('Sum of Costs')
     # ax.set_title(f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.')
     set_plot_title(ax, f'{img_dir[:-4]} Map | time limit: {time_to_think_limit} sec.',
                    size=10)

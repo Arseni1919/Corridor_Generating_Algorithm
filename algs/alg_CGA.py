@@ -113,6 +113,7 @@ class ALgCGA:
         actions = {
             agent.name: agent.path[self.next_iteration].xy_name for agent in self.agents
         }
+        self.logs['soc'] = len(self.agents_dict['agent_0'].path)
         return actions
 
     def _check_solvability(self) -> None:

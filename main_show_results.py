@@ -37,7 +37,7 @@ def main():
     # file_dir = '2024-02-29--02-08_ALGS-1_RUNS-25_MAP-empty-32-32.json'
     # file_dir = '2024-02-29--05-25_ALGS-1_RUNS-25_MAP-random-32-32-20.json'
     # file_dir = '2024-02-29--10-50_ALGS-1_RUNS-25_MAP-maze-32-32-4.json'
-    # show_results(file_dir=f'logs_for_plots/{file_dir}', lmapf=True)
+    # show_results(file_dir=f'logs_experiments/{file_dir}', lmapf=True)
 
     # SACG - old
     # file_dir = 'SACG_2024-02-27--16-18_ALGS-2_RUNS-25_MAP-empty-32-32.json'

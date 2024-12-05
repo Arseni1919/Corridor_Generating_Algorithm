@@ -11,7 +11,7 @@ lightning_logs
 .ckpt
 example.ckpt
 .neptune
-logs_for_plots
+logs_experiments
 final_logs
 logs_for_heuristics
 logs_for_graphs

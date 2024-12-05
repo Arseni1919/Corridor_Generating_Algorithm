@@ -7,6 +7,7 @@ from main_show_results import show_results
 from algs.alg_PrP_SACG import ALgPrPSACG
 from algs.alg_CGA import ALgCGA
 from algs.alg_PIBT import AlgPIBT
+from algs.alg_CBS_SACG import ALgCBS
 from environments.env_SACG_LMAPF import SimEnvLMAPF
 
 
@@ -27,11 +28,12 @@ def main():
     # set_seed(random_seed_bool=False, seed=123)
     # set_seed(random_seed_bool=True)
     # ---------------------------------------------------- #
+    n_agents_list = [10, 20 ,30, 40, 50, 60, 70, 80, 90, 100]
     # n_agents_list = [50, 100, 150, 200, 250, 300, 350, 400]
     # n_agents_list = [500, 600, 700, 800, 900, 1000]  # empty
     # n_agents_list = [300, 400, 500, 600, 700, 800]  # rand
     # n_agents_list = [200, 300, 400, 500, 600, 700]  # maze
-    n_agents_list = [100, 200, 300, 400, 500, 600]  # room
+    # n_agents_list = [100, 200, 300, 400, 500, 600]  # room
     # n_agents_list = [100, 200]
     # n_agents_list = [1000]
     # ---------------------------------------------------- #
@@ -46,18 +48,19 @@ def main():
     # img_dir = 'random-64-64-20.map'
     # ---------------------------------------------------- #
     # runs_per_n_agents = 2
-    # runs_per_n_agents = 5
+    runs_per_n_agents = 5
     # runs_per_n_agents = 15
-    runs_per_n_agents = 25
+    # runs_per_n_agents = 25
     # ---------------------------------------------------- #
-    algorithms = [ALgPrPSACG, AlgPIBT, ALgCGA]
+    # algorithms = [ALgPrPSACG, AlgPIBT, ALgCGA]
+    algorithms = [ALgCGA, ALgCBS]
     # algorithms = [AlgPIBT, ALgCBS]
     # algorithms = [AlgPIBT]
     # ---------------------------------------------------- #
     time_to_think_limit = 5
     # ---------------------------------------------------- #
-    to_save_results = True
-    # to_save_results = False
+    # to_save_results = True
+    to_save_results = False
     # ---------------------------------------------------- #
     to_check_collisions = False
     # to_check_collisions = True
@@ -68,6 +71,7 @@ def main():
                 'runtime': [],
                 'sr': [],
                 'sq': [],
+                'soc': [],
                 'expanded_nodes': [],
             } for n_agents in n_agents_list
         } for alg in algorithms
@@ -82,7 +86,7 @@ def main():
     # middle_plot = False
     # ---------------------------------------------------- #
     if middle_plot:
-        fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
         # fig, ax = plt.subplots(1, 2, figsize=(10, 5))
     # ---------------------------------------------------- #
     path_to_maps = 'maps'
@@ -120,18 +124,20 @@ def main():
                 logs_dict[alg.name][f'{n_agents}']['sr'].append(solved)
                 if solved:
                     logs_dict[alg.name][f'{n_agents}']['runtime'].append(alg.logs['runtime'])
-                    logs_dict[alg.name][f'{n_agents}']['expanded_nodes'].append(alg.logs['expanded_nodes'])
+                    # logs_dict[alg.name][f'{n_agents}']['expanded_nodes'].append(alg.logs['expanded_nodes'])
                     # logs_dict[alg.name][f'{n_agents}']['sq'].append(len(env.agents_dict['agent_0'].path))
-                    logs_dict[alg.name][f'{n_agents}']['sq'].append(sum([len(a.unique_moves) for a in env.agents]))
+                    # logs_dict[alg.name][f'{n_agents}']['sq'].append(sum([len(a.unique_moves) for a in env.agents]))
+                    logs_dict[alg.name][f'{n_agents}']['soc'].append(alg.logs['soc'])
 
                 print(f'\n=============================================')
                 print(f'{n_agents=}, {i_run=}, {algorithm.name}')
                 print(f'=============================================')
                 if middle_plot:
                     plot_sr(ax[0], logs_dict)
-                    plot_sq_metric_cactus(ax[1], logs_dict)
+                    plot_soc(ax[1], logs_dict)
+                    # plot_sq_metric_cactus(ax[1], logs_dict)
                     # plot_en_metric_cactus(ax[2], logs_dict)
-                    plot_time_metric_cactus(ax[2], logs_dict)
+                    # plot_time_metric_cactus(ax[2], logs_dict)
                     plt.pause(0.001)
 
     if to_save_results:
