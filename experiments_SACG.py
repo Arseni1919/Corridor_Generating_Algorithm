@@ -38,9 +38,14 @@ def main():
     # n_agents_list = [1000]
     # ---------------------------------------------------- #
     # img_dir = 'empty-32-32.map'
-    # img_dir = 'random-32-32-20.map'
+    img_dir = 'random-32-32-20.map'
     # img_dir = 'maze-32-32-4.map'
-    img_dir = 'room-32-32-4.map'
+    # img_dir = 'room-32-32-4.map'
+
+    # img_dir = '15-15-four-rooms.map'  # 100
+    # img_dir = '15-15-eight-rooms.map'  # 150
+    # img_dir = '15-15-six-rooms.map'   # 175
+    # img_dir = '15-15-two-rooms.map'  # 200
 
     # img_dir = '10_10_my_rand.map'
     # img_dir = 'random-32-32-10.map'
@@ -105,12 +110,14 @@ def main():
         for i_run in range(runs_per_n_agents):
 
             # init
-            start_nodes = random.sample(env.nodes, n_agents)
+            init_nodes = random.sample(env.nodes, n_agents + 1)
+            start_nodes = init_nodes[0:n_agents]
+            main_goal_node = init_nodes[-1]
 
             for algorithm in algorithms:
 
                 # the run
-                obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], max_time=10000,
+                obs = env.reset(start_node_names=[n.xy_name for n in start_nodes], main_goal_node=main_goal_node, max_time=10000,
                                 corridor_size=1)
                 # alg creation + init
                 alg = algorithm(env=env)
@@ -127,7 +134,8 @@ def main():
                     # logs_dict[alg.name][f'{n_agents}']['expanded_nodes'].append(alg.logs['expanded_nodes'])
                     # logs_dict[alg.name][f'{n_agents}']['sq'].append(len(env.agents_dict['agent_0'].path))
                     # logs_dict[alg.name][f'{n_agents}']['sq'].append(sum([len(a.unique_moves) for a in env.agents]))
-                    logs_dict[alg.name][f'{n_agents}']['soc'].append(alg.logs['soc'])
+                    soc = alg.logs['soc']
+                    logs_dict[alg.name][f'{n_agents}']['soc'].append(soc)
 
                 print(f'\n=============================================')
                 print(f'{n_agents=}, {i_run=}, {algorithm.name}')

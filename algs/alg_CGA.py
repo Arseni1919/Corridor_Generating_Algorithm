@@ -20,6 +20,7 @@ class AlgCGAAgent:
 
     def __init__(self, num: int, start_node: Node, next_goal_node: Node):
         self.num = num
+        self.name = f'agent_{self.num}'
         self.start_node: Node = start_node
         self.prev_node: Node = start_node
         self.curr_node: Node = start_node
@@ -29,9 +30,11 @@ class AlgCGAAgent:
         self.goals_per_iter_list: List[Node] = [next_goal_node]
         self.arrived: bool = False
 
-    @property
-    def name(self):
-        return f'agent_{self.num}'
+    def __str__(self):
+        return f'{self.name} ({self.start_node.xy_name}->{self.next_goal_node.xy_name})'
+
+    def __repr__(self):
+        return f'{self.name} ({self.start_node.xy_name}->{self.next_goal_node.xy_name})'
 
     @property
     def path_names(self):
@@ -40,22 +43,6 @@ class AlgCGAAgent:
     @property
     def last_path_node_name(self):
         return self.path[-1].xy_name
-
-    @property
-    def a_curr_node_name(self):
-        return self.curr_node.xy_name
-
-    @property
-    def a_prev_node_name(self):
-        return self.prev_node.xy_name
-
-    @property
-    def a_next_node_name(self):
-        return self.next_node.xy_name
-
-    @property
-    def a_next_goal_node_name(self):
-        return self.next_goal_node.xy_name
 
     def __eq__(self, other):
         return self.num == other.num
@@ -91,6 +78,12 @@ class ALgCGA:
 
         self.global_order: List[AlgCGAAgent] = []
         self.logs: dict | None = None
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
 
     def initiate_problem(self, obs: dict) -> bool:
         self.start_nodes = [self.nodes_dict[s_name] for s_name in obs['start_nodes_names']]

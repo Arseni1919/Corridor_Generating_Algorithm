@@ -1,4 +1,5 @@
 import random
+from telnetlib import NOOPT
 
 from tools_for_plotting import *
 from tools_for_heuristics import *
@@ -52,6 +53,7 @@ class SimEnvLMAPF:
         self.agents: List[SimAgentLMAPF] = []
         self.agents_dict: Dict[str, SimAgentLMAPF] = {}
         self.start_nodes: List[Node] = []
+        self.main_goal_node: Node| None = None
         self.max_time: int | None = None
         self.corridor_size: int = 1
 
@@ -74,14 +76,15 @@ class SimEnvLMAPF:
     def agents_names(self):
         return [a.name for a in self.agents]
 
-    def reset(self, start_node_names: List[str], max_time: int, corridor_size: int) -> Dict[str, Any]:
+    def reset(self, start_node_names: List[str], main_goal_node: Node | None, max_time: int, corridor_size: int) -> Dict[str, Any]:
         self.start_nodes = [self.nodes_dict[snn] for snn in start_node_names]
+        self.main_goal_node = main_goal_node
         self.max_time = max_time
         self.corridor_size = corridor_size
         self._check_solvability()
         self._create_agents()
         # set first goals
-        self._update_goals()
+        self._update_goals(main_goal_node)
         self.n_runs += 1
         self.iteration = 1
         obs = self._get_obs()
@@ -140,12 +143,16 @@ class SimEnvLMAPF:
         # if curr_agent.num != 0:
         #     curr_agent.next_goal_node = curr_agent.curr_node
 
-    def _update_goals(self):
+    def _update_goals(self, main_goal_node: list | None = None):
+        if self.is_sacg:
+            if main_goal_node is not None:
+                self.agents[0].next_goal_node = main_goal_node
+                for agent in self.agents[1:]:
+                    agent.next_goal_node = agent.start_node
+            return
         for agent in self.agents:
             if agent.next_goal_node is None:
                 self.assign_next_goal(agent)
-                continue
-            if self.is_sacg:
                 continue
             agent.arrived = agent.curr_node == agent.next_goal_node
             if agent.arrived:

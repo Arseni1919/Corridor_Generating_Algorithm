@@ -36,10 +36,10 @@ class AlgCBSAgent:
         return self.num == other.num
 
     def __str__(self):
-        return self.name
+        return f'{self.name} ({self.start_node.xy_name}->{self.next_goal_node.xy_name})'
 
     def __repr__(self):
-        return self.name
+        return f'{self.name} ({self.start_node.xy_name}->{self.next_goal_node.xy_name})'
 
 
 class CBSNode:
@@ -138,6 +138,7 @@ class ALgCBS:
         self.agents_dict: Dict[str, AlgCBSAgent] = {}
         self.main_agent: AlgCBSAgent | None = None
         self.start_nodes: List[Node] = []
+        self.open_list: List[CBSNode] = []
 
         self.max_time: int | None = self.env.max_time
         self.next_iteration: int = 0
@@ -145,10 +146,17 @@ class ALgCBS:
         self.global_order: List[AlgCBSAgent] = []
         self.logs: dict | None = None
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
     def initiate_problem(self, obs: dict) -> bool:
         self.start_nodes = [self.nodes_dict[s_name] for s_name in obs['start_nodes_names']]
         self._create_agents(obs)
         self.global_order = self.agents[:]
+        self.open_list = []
         self.logs = {
             'runtime': 0,
             'expanded_nodes': 0,
@@ -211,9 +219,9 @@ class ALgCBS:
             cbs_i=cbs_i, agents=self.agents, main_agent=self.main_agent, nodes=self.nodes, nodes_dict=self.nodes_dict, h_dict=self.h_dict, map_dim=self.map_dim
         )
         root.create_init_solution()
-        open_list = [root]
-        while len(open_list) > 0:
-            next_cbs_node = heapq.heappop(open_list)
+        self.open_list = [root]
+        while len(self.open_list) > 0:
+            next_cbs_node = heapq.heappop(self.open_list)
             no_conf_bool, first_conf, conf_type, conf_agents = validate_cbs_node(next_cbs_node)
             if no_conf_bool:
                 self._upload_paths(next_cbs_node)
@@ -227,9 +235,8 @@ class ALgCBS:
                 new_cbs_node.add_constraint(conf_agent, first_conf, conf_type)
                 succeeded = new_cbs_node.update_plan(conf_agent)
                 if succeeded:
-                    heapq.heappush(open_list, new_cbs_node)
+                    heapq.heappush(self.open_list, new_cbs_node)
         return False
-
 
 def validate_cbs_node(
         cbs_node: CBSNode
